@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp">
+
+        <TextView android:text="@+id/mgrrowtext" android:layout_width="wrap_content"
+                android:id="@+id/mgrrowtext"
+                android:layout_alignTop="@+id/mgrrowimage"
+                android:layout_alignBottom="@+id/mgrrowimage"
+                android:gravity="center_vertical"
+                android:layout_height="35dp"
+                android:textSize="23dp"
+                android:maxLength="20"/> 
+        <ImageButton android:id="@+id/button_edit_entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/edit_entry"
+                android:text="@string/edit_entry" />
+        <ImageButton android:id="@+id/button_delete_entry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/delete_entry"
+                android:text="@string/delete_entry" />
+                
+</LinearLayout>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@+id/relativeLayout01"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical" android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <LinearLayout android:id="@+id/mgrLinearLayoutList"
+                android:orientation="vertical" android:layout_width="fill_parent"
+                android:layout_height="wrap_content" android:layout_alignParentBottom="true">
+
+                <LinearLayout android:id="@+id/mgrLinearLayoutManage"
+                        android:orientation="vertical" android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true" android:paddingLeft="10dp"
+                        android:paddingRight="10dp" android:paddingBottom="5dp">
+
+                        <LinearLayout android:orientation="horizontal"
+                                android:layout_width="fill_parent" android:layout_height="fill_parent">
+                                <Button android:id="@+id/mgrButtonNew" android:layout_height="wrap_content"
+                                        android:layout_width="0dip" android:layout_weight=".3"
+                                        android:text="@string/mgrnew"></Button>
+                                <Button android:id="@+id/mgrButtonCancel" android:layout_height="wrap_content"
+                                        android:layout_width="0dip" android:layout_weight=".7"
+                                        android:text="@string/mgrcancel"></Button>
+                        </LinearLayout>
+                </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout android:orientation="vertical"
+                android:layout_width="fill_parent" android:layout_height="fill_parent"
+                android:layout_above="@+id/mgrLinearLayoutList">
+                <ListView android:id="@android:id/list" android:layout_width="fill_parent"
+                        android:layout_height="fill_parent" />
+                <TextView android:id="@android:id/empty"
+                        android:layout_width="fill_parent" android:layout_height="fill_parent"
+                        android:text="@string/mgrnodata" />
+        </LinearLayout>
+
+</RelativeLayout>
