@@ -1,7 +1,7 @@
 rtspviewersf
 ============
 
-RTSP Viewer for Android based on GStreamer
+RTSP Viewer for Android based on GStreamer 1.0
 
 https://www.youtube.com/watch?v=uheB0t_8IR4
 
