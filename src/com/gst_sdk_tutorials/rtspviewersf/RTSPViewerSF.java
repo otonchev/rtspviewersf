@@ -51,16 +51,16 @@ import com.gst_sdk_tutorials.rtspviewersf.R;
 import org.freedesktop.gstreamer.GStreamer;
 
 public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, OnSeekBarChangeListener {
-	
-	private static final int numPlayers = 2;
-	
-	/* default for Axis cameras */
-	private static final String defaultMediaUri = "rtsp://192.168.0.90/axis-media/media.amp";
-	private static final String defaultMediaUser = "root";
-	private static final String defaultMediaPass = "pass";
-	
-	private static final String mediaRTSPUriFormat = "rtsp[t|h]://IP/path[?options]";
-	
+
+    private static final int numPlayers = 2;
+
+    /* default for Axis cameras */
+    private static final String defaultMediaUri = "rtsp://192.168.0.90/axis-media/media.amp";
+    private static final String defaultMediaUser = "root";
+    private static final String defaultMediaPass = "pass";
+
+    private static final String mediaRTSPUriFormat = "rtsp[t|h]://IP/path[?options]";
+
     private native long nativePlayerCreate();        // Initialize native code, build pipeline, etc
     private native void nativePlayerFinalize(long data);   // Destroy pipeline and shutdown native code
     private native void nativeSetUri(long data, String uri, String user, String pass); // Set the URI of the media to play
