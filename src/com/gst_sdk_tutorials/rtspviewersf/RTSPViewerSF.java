@@ -100,19 +100,19 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
     	state = new String[numPlayers];
 
     	for (int i = 0; i < numPlayers; i++) {
-    		playerConfigs[i] = new PlayerConfiguration();
-    		playerConfigs[i].setUri(defaultMediaUri);
-    		is_playing_desired[i] = false;
-    		position[i] = 0;
-    		duration[i] = 0;
-    		desired_position[i] = 0;
-    		
-    		Log.i ("Constructed", "  playing:" + is_playing_desired[i] + " position:" + position[i] +
-                    " duration: " + duration[i] + " uri: " + playerConfigs[i].getUri());
+    	    playerConfigs[i] = new PlayerConfiguration();
+    	    playerConfigs[i].setUri(defaultMediaUri);
+    	    is_playing_desired[i] = false;
+    	    position[i] = 0;
+    	    duration[i] = 0;
+    	    desired_position[i] = 0;
+
+            Log.i ("Constructed", "  playing:" + is_playing_desired[i] + " position:" + position[i] +
+                   " duration: " + duration[i] + " uri: " + playerConfigs[i].getUri());
     	}
     	
     	if (!nativeLayerInit())
-    		throw new RuntimeException("Failed to initialize Native layer(not all necessary interface methods implemeted?)");
+    	    throw new RuntimeException("Failed to initialize Native layer(not all necessary interface methods implemeted?)");
     }
     
     // Called when the activity is first created.
@@ -167,34 +167,34 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         select.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
             	if (++active_player == numPlayers)
-            		active_player = 0;
+            	    active_player = 0;
             		
             	for (int i = 0; i < numPlayers; i++) {
-            		setState(i);
+            	    setState(i);
             	}
-				if (!isOrientationLandscape()) {
-					for (int i = 0; i < numPlayers; i++) {
-						SurfaceView sv = findSurfaceViewByPlayerId(i);
-						TextView tv = findTextViewByPlayerId(i);
-						SeekBar sb = findSeekBarByPlayerId (i);
-						TextView st = findSeekTextViewByPlayerId(i);
+	        if (!isOrientationLandscape()) {
+	            for (int i = 0; i < numPlayers; i++) {
+                        SurfaceView sv = findSurfaceViewByPlayerId(i);
+                        TextView tv = findTextViewByPlayerId(i);
+                        SeekBar sb = findSeekBarByPlayerId (i);
+                        TextView st = findSeekTextViewByPlayerId(i);
 
-						if (sv == null || tv == null || sb == null || st == null)
-							break;
+                        if (sv == null || tv == null || sb == null || st == null)
+                            break;
 
-						if (i == active_player) {
-							sv.setVisibility(View.VISIBLE);
-							tv.setVisibility(View.VISIBLE);
-							sb.setVisibility(View.VISIBLE);
-							st.setVisibility(View.VISIBLE);
-						} else {
-							sv.setVisibility(View.INVISIBLE);
-							tv.setVisibility(View.INVISIBLE);
-							sb.setVisibility(View.INVISIBLE);
-							st.setVisibility(View.INVISIBLE);
-						}
-					}
-				}
+                        if (i == active_player) {
+                            sv.setVisibility(View.VISIBLE);
+                            tv.setVisibility(View.VISIBLE);
+                            sb.setVisibility(View.VISIBLE);
+                            st.setVisibility(View.VISIBLE);
+                        } else {
+                            sv.setVisibility(View.INVISIBLE);
+                            tv.setVisibility(View.INVISIBLE);
+                            sb.setVisibility(View.INVISIBLE);
+                            st.setVisibility(View.INVISIBLE);
+                        }
+                    }
+                }
             	
             	Toast.makeText(RTSPViewerSF.this, getHumanizedPlayerId(active_player), Toast.LENGTH_SHORT).show();
             }
@@ -218,33 +218,34 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
 
         //configure our surface views
         for (int i = 0; i < numPlayers; i++) {
-        	SurfaceView sv = findSurfaceViewByPlayerId(i);
-        	TextView tv = findTextViewByPlayerId(i);
-        	SeekBar sb = findSeekBarByPlayerId (i);
-        	TextView st = findSeekTextViewByPlayerId (i);
+            SurfaceView sv = findSurfaceViewByPlayerId(i);
+            TextView tv = findTextViewByPlayerId(i);
+            SeekBar sb = findSeekBarByPlayerId (i);
+            TextView st = findSeekTextViewByPlayerId (i);
+            SurfaceHolder sh;
             
-        	if (sv == null || tv == null || sb == null || st == null)
-        		break;
+            if (sv == null || tv == null || sb == null || st == null)
+                break;
         	
-        	if (i != active_player && !isOrientationLandscape()) {
+            if (i != active_player && !isOrientationLandscape()) {
             	sv.setVisibility(View.INVISIBLE);
                 tv.setVisibility(View.INVISIBLE);
                 sb.setVisibility(View.INVISIBLE);
                 st.setVisibility(View.INVISIBLE);
-        	}
+            }
         	
-        	sb.setOnSeekBarChangeListener(this);
-        	
-        	SurfaceHolder sh = sv.getHolder();
-        	sh.addCallback(this);
+            sb.setOnSeekBarChangeListener(this);
+
+            sh = sv.getHolder();
+            sh.addCallback(this);
 
             sv.setOnClickListener(new OnClickListener() {
                 public void onClick(View v) {
-                	if (is_full_screen) {
-                		unsetFullscreen();
-                		is_full_screen = false;
-                	} else
-                		startUriAlertDialog();
+                    if (is_full_screen) {
+                        unsetFullscreen();
+                        is_full_screen = false;
+                    } else
+                        startUriAlertDialog();
                 }
             });
         }
@@ -280,13 +281,12 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
                 pass = sharedPreferences.getString("pass" + i, null);
                 
                 if (uri != null) {
-                	playerConfigs[i].setUri(uri);
+                    playerConfigs[i].setUri(uri);
                     playerConfigs[i].setName(name);
                     playerConfigs[i].setUser(user);
                     playerConfigs[i].setPass(pass);
-					Log.d("GStreamer",
-							"Retrieving configuration from shared preferences: "
-									+ playerConfigs[i].getUri());
+		    Log.d("GStreamer", "Retrieving configuration from shared preferences: " +
+                            playerConfigs[i].getUri());
                 }
             }
             
@@ -299,14 +299,14 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         this.findViewById(R.id.button_stop).setEnabled(false);
         
         for (int i = 0; i < numPlayers; i++) {
-        	native_custom_data[i] = nativePlayerCreate ();
+            native_custom_data[i] = nativePlayerCreate ();
         }
     }
     
     private int findPlayerIdByPlayerData (long data) {
     	for (int i = 0; i < numPlayers; i++)
-    		if (native_custom_data[i] == data)
-    			return i;
+    	    if (native_custom_data[i] == data)
+                return i;
     	return -1;
     }
         
@@ -333,11 +333,11 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
     
     private int findPlayerIdBySeekBar(SeekBar sb) {
     	for (int i = 0; i < numPlayers; i++) {
-    		String seekbarID = "seek_bar_" + i;
-    		int resID = getResources().getIdentifier(seekbarID, "id", getPackageName());
-    		SeekBar tmp = (SeekBar) RTSPViewerSF.this.findViewById(resID);
-    		if (sb == tmp)
-    			return i;
+    	    String seekbarID = "seek_bar_" + i;
+            int resID = getResources().getIdentifier(seekbarID, "id", getPackageName());
+    	    SeekBar tmp = (SeekBar) RTSPViewerSF.this.findViewById(resID);
+    	    if (sb == tmp)
+    	        return i;
     	}
     	return 0;
     }
@@ -354,7 +354,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
     	
     	name = playerConfigs[player_id].getName();
         if (name == null)
-        	name = "Player " + player_id;
+            name = "Player " + player_id;
         
         return name;
     }
@@ -379,10 +379,10 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
 
     protected void onSaveInstanceState (Bundle outState) {
         for (int i = 0; i < numPlayers; i++) {
-        	outState.putInt("position" + i, position[i]);
-        	outState.putInt("duration" + i, duration[i]);
-        	outState.putBoolean("playing" + i, is_playing_desired[i]);
-        	outState.putString("mediaUri" + i, playerConfigs[i].getUri());
+            outState.putInt("position" + i, position[i]);
+            outState.putInt("duration" + i, duration[i]);
+            outState.putBoolean("playing" + i, is_playing_desired[i]);
+            outState.putString("mediaUri" + i, playerConfigs[i].getUri());
             outState.putString("mediaUser" + i, playerConfigs[i].getUser());
             outState.putString("mediaPass" + i, playerConfigs[i].getPass());
             outState.putString("mediaName" + i, playerConfigs[i].getName());
@@ -398,7 +398,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         SharedPreferences.Editor editor = sharedPreferences.edit();
         
         for (int i=0; i < numPlayers; i++) {
-        	editor.putString("name" + i, playerConfigs[i].getName());
+            editor.putString("name" + i, playerConfigs[i].getName());
             editor.putString("uri" + i, playerConfigs[i].getUri());
             editor.putString("user" + i, playerConfigs[i].getUser());
             editor.putString("pass" + i, playerConfigs[i].getPass());
@@ -407,8 +407,8 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         editor.commit();
         
     	for (int i = 0; i < numPlayers; i++) {
-		nativePlayerFinalize(native_custom_data[i]);
-    		native_custom_data[i] = 0x0;
+	    nativePlayerFinalize(native_custom_data[i]);
+    	    native_custom_data[i] = 0x0;
     	}
         if (wake_lock.isHeld())
             wake_lock.release();
@@ -434,9 +434,9 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         player = getHumanizedPlayerId(player_id);
         
         if (active_player == player_id)
-        	message = state[player_id] + " " + protocol + " " + player + " *";
+            message = state[player_id] + " " + protocol + " " + player + " *";
         else
-        	message = state[player_id] + " " + protocol + " " + player;
+            message = state[player_id] + " " + protocol + " " + player;
         
         return message;
     }
@@ -476,9 +476,9 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
     	ui_message = "Player " + player_id + ":" + message;
     	
         runOnUiThread (new Runnable() {
-          public void run() {
-            Toast.makeText(RTSPViewerSF.this, ui_message, Toast.LENGTH_SHORT).show();
-          }
+            public void run() {
+                Toast.makeText(RTSPViewerSF.this, ui_message, Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -562,15 +562,18 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
                 + width + " height " + height);
         
         for (int i = 0; i < numPlayers; i++) {
-        	String surfaceID = "surface_video_" + i;
-        	int resID = getResources().getIdentifier(surfaceID, "id", getPackageName());
-        	SurfaceView sv = ((SurfaceView) this.findViewById(resID));
-        	if (sv == null)
-        		break;
-        	SurfaceHolder sh = sv.getHolder();
-        	if (sh == holder) {
-        		nativeSurfaceInit (native_custom_data[i], holder.getSurface());
-        	}
+            String surfaceID = "surface_video_" + i;
+            int resID = getResources().getIdentifier(surfaceID, "id", getPackageName());
+            SurfaceView sv = ((SurfaceView) this.findViewById(resID));
+            SurfaceHolder sh;
+
+            if (sv == null)
+                break;
+
+            sh = sv.getHolder();
+            if (sh == holder) {
+                nativeSurfaceInit (native_custom_data[i], holder.getSurface());
+            }
         }
     }
 
@@ -582,15 +585,18 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         Log.d("GStreamer", "Surface destroyed");
         
         for (int i = 0; i < numPlayers; i++) {
-        	String surfaceID = "surface_video_" + i;
-        	int resID = getResources().getIdentifier(surfaceID, "id", getPackageName());
-        	SurfaceView sv = ((SurfaceView) this.findViewById(resID));
-        	if (sv == null)
-        		break;
-        	SurfaceHolder sh = sv.getHolder();
-        	if (sh == holder) {
-        		nativeSurfaceFinalize (native_custom_data[i]);
-        	}
+            String surfaceID = "surface_video_" + i;
+            int resID = getResources().getIdentifier(surfaceID, "id", getPackageName());
+            SurfaceView sv = ((SurfaceView) this.findViewById(resID));
+            SurfaceHolder sh;
+
+            if (sv == null)
+                break;
+
+            sh = sv.getHolder();
+            if (sh == holder) {
+                nativeSurfaceFinalize (native_custom_data[i]);
+            }
         }
     }
 
@@ -628,7 +634,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
     public void onStopTrackingTouch(SeekBar sb) {
         nativeSetPosition(native_custom_data[active_player], desired_position[active_player]);
         if (is_playing_desired[active_player])
-        	nativePlay(native_custom_data[active_player]);
+            nativePlay(native_custom_data[active_player]);
     }
     
     private void setFullscreen()
@@ -648,15 +654,15 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         fullscreen.setVisibility(View.INVISIBLE);
         
     	for (int i = 0; i < numPlayers; i++) {
-    		TextView tv = findTextViewByPlayerId(i);
-    		SeekBar sb = findSeekBarByPlayerId (i);
+    	    TextView tv = findTextViewByPlayerId(i);
+    	    SeekBar sb = findSeekBarByPlayerId (i);
             TextView time = findSeekTextViewByPlayerId (i);
             
-    		if (tv == null || sb == null || time == null)
-    			break;
-    		tv.setVisibility(View.INVISIBLE);
-    		time.setVisibility(View.INVISIBLE);
-    		sb.setVisibility(View.INVISIBLE);
+    	    if (tv == null || sb == null || time == null)
+    	        break;
+    	    tv.setVisibility(View.INVISIBLE);
+    	    time.setVisibility(View.INVISIBLE);
+    	    sb.setVisibility(View.INVISIBLE);
     	}
         
         this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -680,17 +686,18 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         fullscreen.setVisibility(View.VISIBLE);
         
     	for (int i = 0; i < numPlayers; i++) {
-    		TextView tv = findTextViewByPlayerId(i);
-    		SeekBar sb = findSeekBarByPlayerId (i);
+    	    TextView tv = findTextViewByPlayerId(i);
+    	    SeekBar sb = findSeekBarByPlayerId (i);
             TextView time = findSeekTextViewByPlayerId (i);
             
-    		if (tv == null || sb == null || time == null)
-    			break;
-    		if (active_player == i || isOrientationLandscape ()) {
-    			tv.setVisibility(View.VISIBLE);
-    		    time.setVisibility(View.VISIBLE);
-    		    sb.setVisibility(View.VISIBLE);
-    		}
+    	    if (tv == null || sb == null || time == null)
+    	        break;
+
+    	    if (active_player == i || isOrientationLandscape ()) {
+    	        tv.setVisibility(View.VISIBLE);
+    	        time.setVisibility(View.VISIBLE);
+    	        sb.setVisibility(View.VISIBLE);
+    	    }
     	}
         
         this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -732,16 +739,18 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
                 String user = input_user.getText().toString();
                 String pass = input_pass.getText().toString();
                 if (!uri.isEmpty() && (uri.startsWith("rtsp://") ||
-                        uri.startsWith("rtspt://") || uri.startsWith("rtsph://"))) {
-                	playerConfigs[active_player].setUri(uri);
-                	playerConfigs[active_player].setUser(user);
-                	playerConfigs[active_player].setPass(pass);
+                    uri.startsWith("rtspt://") || uri.startsWith("rtsph://"))) {
+                    playerConfigs[active_player].setUri(uri);
+                    playerConfigs[active_player].setUser(user);
+                    playerConfigs[active_player].setPass(pass);
                     position[active_player] = 0;
+
                     Log.d("GStreamer", "New configuration from alert dialog: " + playerConfigs[active_player].getUri());
+
                     setMediaUri(active_player, playerConfigs[active_player]);
                 } else {
                     Toast.makeText(RTSPViewerSF.this, "Invalid URI, accepted format is " + mediaRTSPUriFormat,
-                    		Toast.LENGTH_SHORT).show();
+                            Toast.LENGTH_SHORT).show();
                 }
             }
         });
