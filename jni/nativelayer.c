@@ -241,7 +241,7 @@ gst_native_player_create (JNIEnv * env, jobject thiz)
 
 /* Free resources */
 static void
-gst_native_finalize (JNIEnv * env, jobject thiz, jlong datap)
+gst_native_player_finalize (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
 
@@ -416,7 +416,7 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz, jlong datap)
 /* List of implemented native methods */
 static JNINativeMethod native_methods[] = {
   {"nativePlayerCreate", "()J", (void *) gst_native_player_create},
-  {"nativeFinalize", "(J)V", (void *) gst_native_finalize},
+  {"nativePlayerFinalize", "(J)V", (void *) gst_native_player_finalize},
   {"nativeSetUri", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
         (void *) gst_native_set_uri},
   {"nativePlay", "(J)V", (void *) gst_native_play},

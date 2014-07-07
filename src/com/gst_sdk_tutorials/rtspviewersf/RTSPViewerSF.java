@@ -62,7 +62,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
 	private static final String mediaRTSPUriFormat = "rtsp[t|h]://IP/path[?options]";
 	
     private native long nativePlayerCreate();        // Initialize native code, build pipeline, etc
-    private native void nativeFinalize(long data);   // Destroy pipeline and shutdown native code
+    private native void nativePlayerFinalize(long data);   // Destroy pipeline and shutdown native code
     private native void nativeSetUri(long data, String uri, String user, String pass); // Set the URI of the media to play
     private native void nativePlay(long data);       // Set pipeline to PLAYING
     private native void nativeSetPosition(long data, int milliseconds); // Seek to the indicated position, in milliseconds
@@ -407,7 +407,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         editor.commit();
         
     	for (int i = 0; i < numPlayers; i++) {
-    		nativeFinalize(native_custom_data[i]);
+		nativePlayerFinalize(native_custom_data[i]);
     		native_custom_data[i] = 0x0;
     	}
         if (wake_lock.isHeld())
