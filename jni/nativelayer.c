@@ -32,8 +32,9 @@ GST_DEBUG_CATEGORY_STATIC (debug_category);
 #define GST_CAT_DEFAULT debug_category
 
 /*
- * These macros provide a way to store the native pointer to CustomData, which might be 32 or 64 bits, into
- * a jlong, which is always 64 bits, without warnings.
+ * These macros provide a way to store the native pointer to CustomData, which
+ * might be 32 or 64 bits, into a jlong, which is always 64 bits, without
+ * warnings.
  */
 #if GLIB_SIZEOF_VOID_P == 8
 # define J_TO_NATIVEP(jdata) (CustomData *)jdata
@@ -44,12 +45,15 @@ GST_DEBUG_CATEGORY_STATIC (debug_category);
 #endif
 
 /* Structure to contain all our information, so we can pass it to callbacks */
-typedef struct _CustomData {
-  jobject app;                  /* Application instance, used to call its methods. A global reference is kept. */
+typedef struct _CustomData
+{
+  jobject app;                  /* Application instance, used to call its methods.
+                                 * A global reference is kept. */
   GstMediaPlayer *player;       /* GstMediaPlayer instance, this is the pipeline */
 } CustomData;
 
-/* These global variables cache values which are not changing during execution */
+/* These global variables cache values which are not changing during
+ * execution */
 static pthread_key_t current_jni_env;
 static JavaVM *java_vm;
 static jmethodID set_error_method_id;
@@ -110,15 +114,16 @@ get_jni_env (void)
 static void
 new_status (GstMediaPlayer * player, gchar * state, gpointer user_data)
 {
-  CustomData *data = (CustomData *)user_data;
+  CustomData *data = (CustomData *) user_data;
   JNIEnv *env = get_jni_env ();
   jstring jmessage;
 
   GST_DEBUG ("Setting state to: %s", state);
 
-  jmessage = (*env)->NewStringUTF(env, state);
+  jmessage = (*env)->NewStringUTF (env, state);
 
-  (*env)->CallVoidMethod (env, data->app, set_state_method_id, NATIVEP_TO_J (data), jmessage);
+  (*env)->CallVoidMethod (env, data->app, set_state_method_id,
+      NATIVEP_TO_J (data), jmessage);
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -130,15 +135,16 @@ new_status (GstMediaPlayer * player, gchar * state, gpointer user_data)
 static void
 error (GstMediaPlayer * player, gchar * error, gpointer user_data)
 {
-  CustomData *data = (CustomData *)user_data;
+  CustomData *data = (CustomData *) user_data;
   JNIEnv *env = get_jni_env ();
   jstring jmessage;
 
   GST_DEBUG ("Setting error to: %s", error);
 
-  jmessage = (*env)->NewStringUTF(env, error);
+  jmessage = (*env)->NewStringUTF (env, error);
 
-  (*env)->CallVoidMethod (env, data->app, set_error_method_id, NATIVEP_TO_J (data), jmessage);
+  (*env)->CallVoidMethod (env, data->app, set_error_method_id,
+      NATIVEP_TO_J (data), jmessage);
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -150,10 +156,11 @@ error (GstMediaPlayer * player, gchar * error, gpointer user_data)
 static void
 gst_initialized (GstMediaPlayer * player, gpointer user_data)
 {
-  CustomData *data = (CustomData *)user_data;
+  CustomData *data = (CustomData *) user_data;
   JNIEnv *env = get_jni_env ();
 
-  (*env)->CallVoidMethod (env, data->app, on_gstreamer_initialized_method_id, NATIVEP_TO_J (data));
+  (*env)->CallVoidMethod (env, data->app, on_gstreamer_initialized_method_id,
+      NATIVEP_TO_J (data));
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -161,12 +168,14 @@ gst_initialized (GstMediaPlayer * player, gpointer user_data)
 }
 
 static void
-size_changed (GstMediaPlayer * player, gint width, gint height, gpointer user_data)
+size_changed (GstMediaPlayer * player, gint width, gint height,
+    gpointer user_data)
 {
-  CustomData *data = (CustomData *)user_data;
+  CustomData *data = (CustomData *) user_data;
   JNIEnv *env = get_jni_env ();
 
-  (*env)->CallVoidMethod (env, data->app, on_media_size_changed_method_id, NATIVEP_TO_J (data), (jint)width, (jint)height);
+  (*env)->CallVoidMethod (env, data->app, on_media_size_changed_method_id,
+      NATIVEP_TO_J (data), (jint) width, (jint) height);
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -174,12 +183,14 @@ size_changed (GstMediaPlayer * player, gint width, gint height, gpointer user_da
 }
 
 static void
-new_position (GstMediaPlayer * player, gint position, gint duration, gpointer user_data)
+new_position (GstMediaPlayer * player, gint position, gint duration,
+    gpointer user_data)
 {
-  CustomData *data = (CustomData *)user_data;
+  CustomData *data = (CustomData *) user_data;
   JNIEnv *env = get_jni_env ();
 
-  (*env)->CallVoidMethod (env, data->app, set_current_position_method_id, NATIVEP_TO_J (data), position, duration);
+  (*env)->CallVoidMethod (env, data->app, set_current_position_method_id,
+      NATIVEP_TO_J (data), position, duration);
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -190,9 +201,10 @@ new_position (GstMediaPlayer * player, gint position, gint duration, gpointer us
  * Java Bindings
  */
 
-/* Instruct the native code to create its internal data structure and pipeline */
+/* Instruct the native code to create its internal data structure and
+ * pipeline */
 static jlong
-gst_native_player_create (JNIEnv* env, jobject thiz)
+gst_native_player_create (JNIEnv * env, jobject thiz)
 {
   GstMediaPlayer *player;
   CustomData *data;
@@ -202,11 +214,15 @@ gst_native_player_create (JNIEnv* env, jobject thiz)
   GST_DEBUG ("Created CustomData at %p", data);
 
   player = gst_media_player_new ();
-  g_signal_connect (G_OBJECT (player), "new-status", (GCallback) new_status, data);
+  g_signal_connect (G_OBJECT (player), "new-status", (GCallback) new_status,
+      data);
   g_signal_connect (G_OBJECT (player), "error", (GCallback) error, data);
-  g_signal_connect (G_OBJECT (player), "gst-initialized", (GCallback) gst_initialized, data);
-  g_signal_connect (G_OBJECT (player), "size-changed", (GCallback) size_changed, data);
-  g_signal_connect (G_OBJECT (player), "new-position", (GCallback) new_position, data);
+  g_signal_connect (G_OBJECT (player), "gst-initialized",
+      (GCallback) gst_initialized, data);
+  g_signal_connect (G_OBJECT (player), "size-changed", (GCallback) size_changed,
+      data);
+  g_signal_connect (G_OBJECT (player), "new-position", (GCallback) new_position,
+      data);
 
   if (!gst_media_player_setup_thread (player, NULL)) {
     GST_ERROR ("Could not configure player");
@@ -218,14 +234,14 @@ gst_native_player_create (JNIEnv* env, jobject thiz)
   GST_DEBUG ("Created GlobalRef for app object at %p", data->app);
 
   GST_DEBUG_CATEGORY_INIT (debug_category, "nativelayer", 0, "Native layer");
-  gst_debug_set_threshold_for_name("nativelayer", GST_LEVEL_DEBUG);
+  gst_debug_set_threshold_for_name ("nativelayer", GST_LEVEL_DEBUG);
 
   return NATIVEP_TO_J (data);
 }
 
 /* Free resources */
 static void
-gst_native_finalize (JNIEnv* env, jobject thiz, jlong datap)
+gst_native_finalize (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
 
@@ -246,7 +262,8 @@ gst_native_finalize (JNIEnv* env, jobject thiz, jlong datap)
 
 /* Set pipelines's URI */
 void
-gst_native_set_uri (JNIEnv* env, jobject thiz, jlong datap, jstring uri, jstring user, jstring pass)
+gst_native_set_uri (JNIEnv * env, jobject thiz, jlong datap, jstring uri,
+    jstring user, jstring pass)
 {
   const jbyte *char_uri;
   const jbyte *char_user = NULL;
@@ -275,7 +292,7 @@ gst_native_set_uri (JNIEnv* env, jobject thiz, jlong datap, jstring uri, jstring
 
 /* Set pipeline to PLAYING state */
 static void
-gst_native_play (JNIEnv* env, jobject thiz, jlong datap)
+gst_native_play (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
 
@@ -289,7 +306,7 @@ gst_native_play (JNIEnv* env, jobject thiz, jlong datap)
 
 /* Set pipeline to PAUSED state */
 static void
-gst_native_pause (JNIEnv* env, jobject thiz, jlong datap)
+gst_native_pause (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
 
@@ -303,7 +320,7 @@ gst_native_pause (JNIEnv* env, jobject thiz, jlong datap)
 
 /* Set pipeline to READY state */
 static void
-gst_native_ready (JNIEnv* env, jobject thiz, jlong datap)
+gst_native_ready (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
 
@@ -317,7 +334,8 @@ gst_native_ready (JNIEnv* env, jobject thiz, jlong datap)
 
 /* Instruct the pipeline to seek to a different position */
 void
-gst_native_set_position (JNIEnv* env, jobject thiz, jlong datap, int milliseconds)
+gst_native_set_position (JNIEnv * env, jobject thiz, jlong datap,
+    int milliseconds)
 {
   gint64 desired_position;
   CustomData *data;
@@ -326,35 +344,45 @@ gst_native_set_position (JNIEnv* env, jobject thiz, jlong datap, int millisecond
   if (!data)
     return;
 
-  desired_position = (gint64)(milliseconds * GST_MSECOND);
+  desired_position = (gint64) (milliseconds * GST_MSECOND);
   gst_media_player_set_position (data->player, desired_position);
 }
 
 /* Native layer initializer: retrieve method and field IDs */
 static jboolean
-gst_native_layer_init (JNIEnv* env, jobject obj)
+gst_native_layer_init (JNIEnv * env, jobject obj)
 {
   guint i;
 
-  set_state_method_id = (*env)->GetMethodID (env, obj, "nativeStateChanged", "(JLjava/lang/String;)V");
-  set_error_method_id = (*env)->GetMethodID (env, obj, "nativeErrorOccured", "(JLjava/lang/String;)V");
-  set_current_position_method_id = (*env)->GetMethodID (env, obj, "nativePositionUpdated", "(JII)V");
-  on_gstreamer_initialized_method_id = (*env)->GetMethodID (env, obj, "nativeGStreamerInitialized", "(J)V");
-  on_media_size_changed_method_id = (*env)->GetMethodID (env, obj, "nativeMediaSizeChanged", "(JII)V");
+  set_state_method_id =
+      (*env)->GetMethodID (env, obj, "nativeStateChanged",
+      "(JLjava/lang/String;)V");
+  set_error_method_id =
+      (*env)->GetMethodID (env, obj, "nativeErrorOccured",
+      "(JLjava/lang/String;)V");
+  set_current_position_method_id =
+      (*env)->GetMethodID (env, obj, "nativePositionUpdated", "(JII)V");
+  on_gstreamer_initialized_method_id =
+      (*env)->GetMethodID (env, obj, "nativeGStreamerInitialized", "(J)V");
+  on_media_size_changed_method_id =
+      (*env)->GetMethodID (env, obj, "nativeMediaSizeChanged", "(JII)V");
 
-  if (!set_state_method_id || !set_error_method_id  || !on_gstreamer_initialized_method_id ||
-      !on_media_size_changed_method_id || !set_current_position_method_id) {
-    /* We emit this message through the Android log instead of the GStreamer log because the later
-     * has not been initialized yet.
+  if (!set_state_method_id || !set_error_method_id ||
+      !on_gstreamer_initialized_method_id || !on_media_size_changed_method_id ||
+      !set_current_position_method_id) {
+    /* We emit this message through the Android log instead of the GStreamer log
+     * because the later has not been initialized yet.
      */
-    __android_log_print (ANDROID_LOG_ERROR, "nativelayer", "The calling class does not implement all necessary interface methods");
+    __android_log_print (ANDROID_LOG_ERROR, "nativelayer", "The calling class "
+        "does not implement all necessary interface methods");
     return JNI_FALSE;
   }
   return JNI_TRUE;
 }
 
 static void
-gst_native_surface_init (JNIEnv *env, jobject thiz, jlong datap, jobject surface)
+gst_native_surface_init (JNIEnv * env, jobject thiz, jlong datap,
+    jobject surface)
 {
   ANativeWindow *new_native_window;
   CustomData *data;
@@ -363,15 +391,16 @@ gst_native_surface_init (JNIEnv *env, jobject thiz, jlong datap, jobject surface
   if (!data)
     return;
 
-  new_native_window = ANativeWindow_fromSurface(env, surface);
+  new_native_window = ANativeWindow_fromSurface (env, surface);
 
-  GST_DEBUG ("Received surface %p (native window %p) %p", surface, new_native_window, data);
+  GST_DEBUG ("Received surface %p (native window %p) %p", surface,
+      new_native_window, data);
 
   gst_media_player_set_native_window (data->player, new_native_window);
 }
 
 static void
-gst_native_surface_finalize (JNIEnv *env, jobject thiz, jlong datap)
+gst_native_surface_finalize (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
 
@@ -386,32 +415,37 @@ gst_native_surface_finalize (JNIEnv *env, jobject thiz, jlong datap)
 
 /* List of implemented native methods */
 static JNINativeMethod native_methods[] = {
-  { "nativePlayerCreate", "()J", (void *) gst_native_player_create},
-  { "nativeFinalize", "(J)V", (void *) gst_native_finalize},
-  { "nativeSetUri", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", (void *) gst_native_set_uri},
-  { "nativePlay", "(J)V", (void *) gst_native_play},
-  { "nativePause", "(J)V", (void *) gst_native_pause},
-  { "nativeReady", "(J)V", (void *) gst_native_ready},
-  { "nativeSetPosition", "(JI)V", (void*) gst_native_set_position},
-  { "nativeSurfaceInit", "(JLjava/lang/Object;)V", (void *) gst_native_surface_init},
-  { "nativeSurfaceFinalize", "(J)V", (void *) gst_native_surface_finalize},
-  { "nativeLayerInit", "()Z", (void *) gst_native_layer_init}
+  {"nativePlayerCreate", "()J", (void *) gst_native_player_create},
+  {"nativeFinalize", "(J)V", (void *) gst_native_finalize},
+  {"nativeSetUri", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+        (void *) gst_native_set_uri},
+  {"nativePlay", "(J)V", (void *) gst_native_play},
+  {"nativePause", "(J)V", (void *) gst_native_pause},
+  {"nativeReady", "(J)V", (void *) gst_native_ready},
+  {"nativeSetPosition", "(JI)V", (void *) gst_native_set_position},
+  {"nativeSurfaceInit", "(JLjava/lang/Object;)V",
+        (void *) gst_native_surface_init},
+  {"nativeSurfaceFinalize", "(J)V", (void *) gst_native_surface_finalize},
+  {"nativeLayerInit", "()Z", (void *) gst_native_layer_init}
 };
 
 /* Library initializer */
 jint
-JNI_OnLoad (JavaVM *vm, void *reserved)
+JNI_OnLoad (JavaVM * vm, void *reserved)
 {
   JNIEnv *env = NULL;
 
   java_vm = vm;
 
-  if ((*vm)->GetEnv (vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK) {
-    __android_log_print (ANDROID_LOG_ERROR, "nativelayer", "Could not retrieve JNIEnv");
+  if ((*vm)->GetEnv (vm, (void **) &env, JNI_VERSION_1_4) != JNI_OK) {
+    __android_log_print (ANDROID_LOG_ERROR, "nativelayer",
+        "Could not retrieve JNIEnv");
     return 0;
   }
-  jclass klass = (*env)->FindClass (env, "com/gst_sdk_tutorials/rtspviewersf/RTSPViewerSF");
-  (*env)->RegisterNatives (env, klass, native_methods, G_N_ELEMENTS(native_methods));
+  jclass klass = (*env)->FindClass (env,
+      "com/gst_sdk_tutorials/rtspviewersf/RTSPViewerSF");
+  (*env)->RegisterNatives (env, klass, native_methods,
+      G_N_ELEMENTS (native_methods));
 
   pthread_key_create (&current_jni_env, detach_current_thread);
 
