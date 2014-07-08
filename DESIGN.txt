@@ -12,8 +12,8 @@
 |      |     |              |        |-----------------------------------|1        | GstRTSPPipeline              |<---+  |   +-----------------+
 |      |     |      C       |        |+media_player_new():GstMediaPlayer |         +------------------------------+    |  +---| GstRTSPRecorder |
 | Java |<--->| Native Layer |------->|+set_state():void                  |<>-------|+create_pipeline():GstElement |    |      +-----------------+
-|      |     |              |<<use>> |+set_position():void               |1       1|+query_size():int             |    |
-|      |     |              |        |+set_uri():void                    |         +------------------------------+   +----------------+
+|      |     |              |<<use>> |+set_position():void               |1       1+------------------------------+    |
+|      |     |              |        |+set_uri():void                    |                                            +----------------+
 +------+     +--------------+        |+set_window():void                 |                                      +-----| GstRTSPViewer  |
                                      |+release_window():void             |                                      |     +----------------+
                                      |+set_location():void               |                                      |
@@ -23,6 +23,6 @@
                                      |+gst-initialized                   |         +------------------------+
                                      |+size-changed                      |         |+set_window():void      |
                                      |+position-changed                  |         |+release_window():void  |
-                                     +-----------------------------------+         +------------------------+
-                                     |-pipeline                          |
+                                     +-----------------------------------+         |+query_resolution()     |
+                                     |-pipeline                          |         +------------------------+
                                      +-----------------------------------+
