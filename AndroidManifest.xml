@@ -26,23 +26,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Local files whose MIME type is known to Android -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:mimeType="audio/*" />
-                <data android:mimeType="video/*" />
-                <data android:mimeType="image/*" />
-            </intent-filter>      
         </activity>
         <activity android:name="com.gst_sdk_tutorials.rtspviewersf.ConfigurationManager" android:label="@string/confmanager_name"></activity>
-        <activity
-            android:name="com.lamerman.FileDialog"
-            android:label="@string/filechooser_name" >
-        </activity>
     </application>
 
 </manifest>
