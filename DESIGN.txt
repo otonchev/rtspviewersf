@@ -8,14 +8,14 @@
 | Java |<---->| Native Layer |----------->|+set_state():void                  |<>---------|+create_pipeline() |     |  +---+-------------------+
 |      |      |              |  <<use>>   |+set_position():void               |1         1|+query_size()      |     |
 |      |      |              |            |+set_uri():void                    |           +-------------------+     +------+-------------------+
-+------+      +--------------+            |+set_window():void                 |                                        +---|GstRTSPViewer      |
-                                          |+release_window():void             |                                        |   +-------------------+
-                                          +-----------------------------------+           +-------------------+        |
-                                          |+status-updated                    |<>---------|   <<interface>>   |<-------+
-                                          |+error-occured                     |1      0..1|GstVideoOverlay    |
-                                          |+gst-initialized                   |           +-------------------+
-                                          |+size-changed                      |           |+set_window()      |
-                                          |+position-changed                  |           |+release_window()  |
-                                          +-----------------------------------+           +-------------------+
++------+      +--------------+            |+set_window():void                 |                                         +--|GstRTSPViewer      |
+                                          |+release_window():void             |                                         |  +-------------------+
+                                          +-----------------------------------+           +--------------------+        |
+                                          |+status-updated                    |<>---------|   <<interface>>    |<-------+
+                                          |+error-occured                     |1      0..1|GstRTSPVideoOverlay |
+                                          |+gst-initialized                   |           +--------------------+
+                                          |+size-changed                      |           |+set_window()       |
+                                          |+position-changed                  |           |+release_window()   |
+                                          +-----------------------------------+           +--------------------+
                                           |-pipeline                          |
                                           +-----------------------------------+
