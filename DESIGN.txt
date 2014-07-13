@@ -9,7 +9,7 @@
                                                                               |                                                 |
                                      +-----------------------------------+    |    +------------------------------+             |
 +------+     +--------------+        | GstMediaPlayer                    |<>--+    |   <<interface>>              |<------+     |
-|      |     |              |        |-----------------------------------|1        | GstRTSPPipeline              |<---+  |   +-----------------+
+|      |     |              |        |-----------------------------------|1        | GstRTSPStreamer              |<---+  |   +-----------------+
 |      |     |      C       |        |+media_player_new():GstMediaPlayer |         +------------------------------+    |  +---| GstRTSPRecorder |
 | Java |<--->| Native Layer |------->|+set_state():void                  |<>-------|+create_pipeline():GstElement |    |      +-----------------+
 |      |     |              |<<use>> |+set_position():void               |1       1+------------------------------+    |
@@ -19,7 +19,7 @@
                                      |+set_location():void               |                                      |
                                      +-----------------------------------+         +------------------------+   |
                                      |+status-updated                    |<>-------|   <<interface>>        |<--+
-                                     |+error-occured                     |1    0..1| GstRTSPVideoOverlay    |
+                                     |+error-occured                     |1    0..1| GstRTSPWindowViewer    |
                                      |+gst-initialized                   |         +------------------------+
                                      |+size-changed                      |         |+set_window():void      |
                                      |+position-changed                  |         |+release_window():void  |
