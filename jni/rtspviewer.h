@@ -38,6 +38,7 @@ G_BEGIN_DECLS
 
 typedef struct _GstRTSPViewer GstRTSPViewer;
 typedef struct _GstRTSPViewerClass GstRTSPViewerClass;
+typedef struct _GstRTSPViewerPrivate GstRTSPViewerPrivate;
 
 struct _GstRTSPViewer {
   GObject parent;

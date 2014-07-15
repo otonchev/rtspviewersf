@@ -25,10 +25,10 @@
 G_DEFINE_INTERFACE (GstRTSPStreamer, gst_rtsp_streamer, G_TYPE_OBJECT);
 
 GstElement *
-gst_rtsp_streamer_create_pipeline (GstRTSPStreamer * streamer, GError ** error)
+gst_rtsp_streamer_create_pipeline (GstRTSPStreamer * streamer, GMainContext * context, GError ** error)
 {
   return
-      GST_RTSP_STREMAER_GET_INTERFACE (streamer)->create_pipeline (streamer, error);
+      GST_RTSP_STREMAER_GET_INTERFACE (streamer)->create_pipeline (streamer, context, error);
 }
 
 static void

@@ -61,7 +61,6 @@ static JavaVM *java_vm;
 static jmethodID set_error_method_id;
 static jmethodID set_state_method_id;
 static jmethodID set_current_position_method_id;
-static jmethodID on_gstreamer_initialized_method_id;
 static jmethodID on_media_size_changed_method_id;
 
 /*
@@ -156,20 +155,6 @@ error (GstMediaPlayer * player, gchar * error, gpointer user_data)
 }
 
 static void
-gst_initialized (GstMediaPlayer * player, gpointer user_data)
-{
-  CustomData *data = (CustomData *) user_data;
-  JNIEnv *env = get_jni_env ();
-
-  (*env)->CallVoidMethod (env, data->app, on_gstreamer_initialized_method_id,
-      NATIVEP_TO_J (data));
-  if ((*env)->ExceptionCheck (env)) {
-    GST_ERROR ("Failed to call Java method");
-    (*env)->ExceptionClear (env);
-  }
-}
-
-static void
 size_changed (GstMediaPlayer * player, gint width, gint height,
     gpointer user_data)
 {
@@ -209,24 +194,23 @@ static jlong
 gst_native_player_create (JNIEnv * env, jobject thiz)
 {
   GstMediaPlayer *player;
-  GstRTSPStreamer *streamer;
+  GObject *viewer;
   CustomData *data;
   jlong result;
 
   data = g_new0 (CustomData, 1);
   GST_DEBUG ("Created CustomData at %p", data);
 
-  streamer = g_object_new (GST_TYPE_RTSP_VIEWER, NULL);
+  viewer = g_object_new (GST_TYPE_RTSP_VIEWER, NULL);
 
-  player = gst_media_player_new (streamer);
+  player = gst_media_player_new (GST_RTSP_STREAMER (viewer), GST_RTSP_WINDOW_VIEWER (viewer));
+
+  g_signal_connect (viewer, "size-changed", (GCallback) size_changed,
+      data);
 
   g_signal_connect (G_OBJECT (player), "new-status", (GCallback) new_status,
       data);
   g_signal_connect (G_OBJECT (player), "error", (GCallback) error, data);
-  g_signal_connect (G_OBJECT (player), "gst-initialized",
-      (GCallback) gst_initialized, data);
-  g_signal_connect (G_OBJECT (player), "size-changed", (GCallback) size_changed,
-      data);
   g_signal_connect (G_OBJECT (player), "new-position", (GCallback) new_position,
       data);
 
@@ -368,14 +352,11 @@ gst_native_layer_init (JNIEnv * env, jobject obj)
       "(JLjava/lang/String;)V");
   set_current_position_method_id =
       (*env)->GetMethodID (env, obj, "nativePositionUpdated", "(JII)V");
-  on_gstreamer_initialized_method_id =
-      (*env)->GetMethodID (env, obj, "nativeGStreamerInitialized", "(J)V");
   on_media_size_changed_method_id =
       (*env)->GetMethodID (env, obj, "nativeMediaSizeChanged", "(JII)V");
 
   if (!set_state_method_id || !set_error_method_id ||
-      !on_gstreamer_initialized_method_id || !on_media_size_changed_method_id ||
-      !set_current_position_method_id) {
+      !on_media_size_changed_method_id || !set_current_position_method_id) {
     /* We emit this message through the Android log instead of the GStreamer log
      * because the later has not been initialized yet.
      */
@@ -392,6 +373,7 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jlong datap,
 {
   ANativeWindow *new_native_window;
   CustomData *data;
+  GstRTSPWindowViewer *viewer = NULL;
 
   data = J_TO_NATIVEP (datap);
   if (!data)
@@ -402,13 +384,18 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jlong datap,
   GST_DEBUG ("Received surface %p (native window %p) %p", surface,
       new_native_window, data);
 
-  gst_media_player_set_native_window (data->player, new_native_window);
+  g_object_get (G_OBJECT (data->player), "rtsp-window-viewer", &viewer, NULL);
+  if (viewer != NULL) {
+    gst_rtsp_window_viewer_set_window (viewer, new_native_window);
+    g_object_unref (viewer);
+  }
 }
 
 static void
 gst_native_surface_finalize (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
+  GstRTSPWindowViewer *viewer = NULL;
 
   data = J_TO_NATIVEP (datap);
   if (!data)
@@ -416,7 +403,11 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz, jlong datap)
 
   GST_DEBUG ("Releasing Native Window %p", data);
 
-  gst_media_player_release_native_window (data->player);
+  g_object_get (G_OBJECT (data->player), "rtsp-window-viewer", &viewer, NULL);
+  if (viewer != NULL) {
+    gst_rtsp_window_viewer_release_window (viewer);
+    g_object_unref (viewer);
+  }
 }
 
 /* List of implemented native methods */

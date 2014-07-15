@@ -25,6 +25,7 @@
 #include <android/native_window_jni.h>
 
 #include "rtspstreamer.h"
+#include "rtspwindowviewer.h"
 
 G_BEGIN_DECLS
 
@@ -70,7 +71,7 @@ struct _GstMediaPlayerClass {
 
 GType gst_media_player_get_type (void);
 
-GstMediaPlayer *gst_media_player_new(GstRTSPStreamer * streamer);
+GstMediaPlayer *gst_media_player_new(GstRTSPStreamer * streamer, GstRTSPWindowViewer * viewer);
 gboolean gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error);
 gboolean gst_media_player_set_state (GstMediaPlayer * player, GstState state);
 gboolean gst_media_player_set_position (GstMediaPlayer * player, gint64 position);

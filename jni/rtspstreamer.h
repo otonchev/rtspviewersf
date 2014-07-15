@@ -38,13 +38,13 @@ typedef struct _GstRTSPStreamerInterface GstRTSPStreamerInterface;
 struct _GstRTSPStreamerInterface {
   GTypeInterface iface;
 
-  GstElement * (*create_pipeline) (GstRTSPStreamer * streamer, GError ** error);
+  GstElement * (*create_pipeline) (GstRTSPStreamer * streamer, GMainContext * context, GError ** error);
 };
 
 extern GQuark gst_rtsp_streamer_error_quark (void);
 
 GType         gst_rtsp_streamer_get_type   (void);
 
-GstElement * gst_rtsp_streamer_create_pipeline (GstRTSPStreamer * streamer, GError ** error);
+GstElement * gst_rtsp_streamer_create_pipeline (GstRTSPStreamer * streamer, GMainContext * context, GError ** error);
 
 #endif /* __GST_RTSP_STREAMER_H__ */

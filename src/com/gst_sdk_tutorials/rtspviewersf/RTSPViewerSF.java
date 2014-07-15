@@ -487,9 +487,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
         nativeSetUri (native_custom_data[player], conf.getUri(), conf.getUser(), conf.getPass());
     }
 
-    // Called from native code. Native code calls this once it has created its pipeline and
-    // the main loop is running, so it is ready to accept commands.
-    private void nativeGStreamerInitialized (long data) {
+    private void reConfigureGstreamer (long data) {
     	int player_id = findPlayerIdByPlayerData (data);
     	
         Log.i ("GStreamer", "GStreamer initialized:");
@@ -573,6 +571,7 @@ public class RTSPViewerSF extends Activity implements SurfaceHolder.Callback, On
             sh = sv.getHolder();
             if (sh == holder) {
                 nativeSurfaceInit (native_custom_data[i], holder.getSurface());
+                reConfigureGstreamer (native_custom_data[i]);
             }
         }
     }

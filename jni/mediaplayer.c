@@ -22,6 +22,7 @@
 #include "mediaplayer.h"
 #include "media-player-marshal.h"
 #include "rtspstreamer.h"
+#include "rtspwindowviewer.h"
 
 #define GST_MEDIA_PLAYER_GET_PRIVATE(obj)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), GST_TYPE_MEDIA_PLAYER, GstMediaPlayerPrivate))
@@ -39,10 +40,9 @@ struct _GstMediaPlayerPrivate
   gboolean is_live;             /* Is media live */
   GstClockTime last_seek_time;  /* For seeking overflow prevention (throttling) */
   gint64 desired_position;      /* Position to seek to, once the pipeline is running */
-  gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
-  ANativeWindow *native_window; /* The Android native window where video will be rendered */
   pthread_t gst_app_thread;     /* The thread running the main loop */
   GstRTSPStreamer *streamer;
+  GstRTSPWindowViewer *viewer;
 };
 
 /* Do not allow seeks to be performed closer than this distance. It is visually useless, and will probably
@@ -53,15 +53,14 @@ struct _GstMediaPlayerPrivate
 enum
 {
   PROP_0,
-  PROP_RTSP_VIEWER
+  PROP_RTSP_STREAMER,
+  PROP_RTSP_WINDOW_VIEWER
 };
 
 enum
 {
   SIGNAL_NEW_STATUS,
   SIGNAL_ERROR,
-  SIGNAL_GST_INITIALIZED,
-  SIGNAL_SIZE_CHANGED,
   SIGNAL_NEW_POSITION,
   SIGNAL_LAST
 };
@@ -98,8 +97,12 @@ gst_media_player_class_init (GstMediaPlayerClass * klass)
   gobject_class->set_property = gst_media_player_set_property;
 
   g_object_class_install_property (gobject_class,
-      PROP_RTSP_VIEWER, g_param_spec_object ("rtsp-streamer", "RTSPStreamer", "RTSP Streamer",
+      PROP_RTSP_STREAMER, g_param_spec_object ("rtsp-streamer", "RTSPStreamer", "RTSP Streamer",
       GST_TYPE_RTSP_STREAMER, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  g_object_class_install_property (gobject_class,
+        PROP_RTSP_WINDOW_VIEWER, g_param_spec_object ("rtsp-window-viewer", "RTSPWindowViewer", "RTSP Window Viewer",
+        GST_TYPE_RTSP_WINDOW_VIEWER, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   gst_media_player_signals[SIGNAL_NEW_STATUS] =
       g_signal_new ("new-status", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
@@ -110,16 +113,6 @@ gst_media_player_class_init (GstMediaPlayerClass * klass)
         g_signal_new ("error", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
         G_STRUCT_OFFSET (GstMediaPlayerClass, error), NULL, NULL,
         g_cclosure_marshal_VOID__CHAR, G_TYPE_NONE, 1, G_TYPE_POINTER);
-
-  gst_media_player_signals[SIGNAL_GST_INITIALIZED] =
-        g_signal_new ("gst-initialized", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
-        G_STRUCT_OFFSET (GstMediaPlayerClass, gst_initialized), NULL, NULL,
-        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0, G_TYPE_NONE);
-
-  gst_media_player_signals[SIGNAL_SIZE_CHANGED] =
-        g_signal_new ("size-changed", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
-        G_STRUCT_OFFSET (GstMediaPlayerClass, size_changed), NULL, NULL,
-        g_cclosure_user_marshal_VOID__INT_INT, G_TYPE_NONE, 1, G_TYPE_INT, G_TYPE_INT);
 
   gst_media_player_signals[SIGNAL_NEW_POSITION] =
         g_signal_new ("new-position", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
@@ -141,8 +134,11 @@ gst_media_player_get_property (GObject *object, guint property_id, GValue *value
 
   switch (property_id)
   {
-    case PROP_RTSP_VIEWER:
+    case PROP_RTSP_STREAMER:
       g_value_set_object (value, priv->streamer);
+      break;
+    case PROP_RTSP_WINDOW_VIEWER:
+      g_value_set_object (value, priv->viewer);
       break;
   }
 }
@@ -156,18 +152,22 @@ gst_media_player_set_property (GObject *object, guint property_id,
 
   switch (property_id)
   {
-    case PROP_RTSP_VIEWER:
+    case PROP_RTSP_STREAMER:
       priv->streamer = g_value_get_object (value);
+      break;
+    case PROP_RTSP_WINDOW_VIEWER:
+      priv->viewer = g_value_get_object (value);
       break;
   }
 }
 
 GstMediaPlayer*
-gst_media_player_new (GstRTSPStreamer * streamer)
+gst_media_player_new (GstRTSPStreamer * streamer, GstRTSPWindowViewer * viewer)
 {
   GstMediaPlayer *player;
 
-  player = g_object_new (GST_TYPE_MEDIA_PLAYER, "rtsp-streamer", streamer, NULL);
+  player = g_object_new (GST_TYPE_MEDIA_PLAYER, "rtsp-streamer", streamer,
+      "rtsp-window-viewer", viewer, NULL);
 
   return player;
 }
@@ -213,45 +213,6 @@ execute_seek (GstMediaPlayer * player, gint64 desired_position)
         GST_SEEK_FLAG_KEY_UNIT, desired_position);
     priv->desired_position = GST_CLOCK_TIME_NONE;
   }
-}
-
-/* Retrieve the video sink's Caps and tell the application about the media size */
-static void
-check_media_size (GstMediaPlayer *player)
-{
-  GstElement *video_sink;
-  GstPad *video_sink_pad;
-  GstCaps *caps;
-  int width;
-  int height;
-  GstVideoInfo vinfo;
-  GstMediaPlayerPrivate *priv;
-
-  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
-
-  /* Retrieve the Caps at the entrance of the video sink */
-  g_object_get (priv->pipeline, "video-sink", &video_sink, NULL);
-  video_sink_pad = gst_element_get_static_pad (video_sink, "sink");
-  caps = gst_pad_get_current_caps (video_sink_pad);
-
-  if (gst_video_info_from_caps (&vinfo, caps)) {
-	int par_n, par_d;
-
-	width = vinfo.width;
-	height = vinfo.height;
-	par_n = vinfo.par_n;
-	par_d = vinfo.par_d;
-
-    width = width * par_n / par_d;
-
-	GST_DEBUG ("Media size is %dx%d, notifying application", width, height);
-
-    g_signal_emit (player, gst_media_player_signals[SIGNAL_SIZE_CHANGED], 0, width, height, NULL);
-  }
-
-  gst_caps_unref(caps);
-  gst_object_unref (video_sink_pad);
-  gst_object_unref(video_sink);
 }
 
 /* Delayed seek callback. This gets called by the timer setup in the above function. */
@@ -336,10 +297,7 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
 
     /* The Ready to Paused state change is particularly interesting: */
     if (old_state == GST_STATE_READY && new_state == GST_STATE_PAUSED) {
-      /* By now the sink already knows the media size */
-      check_media_size (player);
-
-      /* If there was a scheduled seek, perform it now that we have moved to the Paused state */
+       /* If there was a scheduled seek, perform it now that we have moved to the Paused state */
       if (GST_CLOCK_TIME_IS_VALID (priv->desired_position))
         execute_seek (player, priv->desired_position);
     }
@@ -461,30 +419,6 @@ check_position (gpointer user_data)
   return TRUE;
 }
 
-/* Check if all conditions are met to report GStreamer as initialized.
- * These conditions will change depending on the application */
-static void
-check_initialization_complete (GstMediaPlayer *player)
-{
-  GstMediaPlayerPrivate *priv;
-
-  GST_LOG ("check initialization complete");
-
-  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
-
-  if (!priv->initialized && priv->native_window != NULL && priv->main_loop != NULL) {
-    GST_DEBUG ("Initialization complete, notifying application. native_window:%p main_loop:%p GstMediaPlayer:%p",
-        priv->native_window, priv->main_loop, player);
-
-    /* The main loop is running and we received a native window, inform the sink about it */
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline), (guintptr)priv->native_window);
-
-    g_signal_emit (player, gst_media_player_signals[SIGNAL_GST_INITIALIZED], 0, NULL);
-
-    priv->initialized = TRUE;
-  }
-}
-
 static void *
 thread_function (void *user_data)
 {
@@ -527,7 +461,10 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  priv->pipeline = gst_rtsp_streamer_create_pipeline (priv->streamer, error);
+  GST_DEBUG ("Creating main context... (GstMediaPlayer: %p)", player);
+  priv->context = g_main_context_new ();
+
+  priv->pipeline = gst_rtsp_streamer_create_pipeline (priv->streamer, priv->context, error);
   if (priv->pipeline == NULL) {
     return FALSE;
   }
@@ -542,9 +479,6 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
   priv->target_state = GST_STATE_READY;
   gst_element_set_state(priv->pipeline, GST_STATE_READY);
-
-  GST_DEBUG ("Creating main context... (GstMediaPlayer: %p)", player);
-  priv->context = g_main_context_new ();
 
   /* Instruct the bus to emit signals for each received message, and connect to the interesting signals */
   bus = gst_element_get_bus (priv->pipeline);
@@ -576,7 +510,6 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   GST_DEBUG_CATEGORY_INIT (debug_category, "mediaplayer", 0, "Media Player");
   gst_debug_set_threshold_for_name("mediaplayer", GST_LEVEL_DEBUG);
 
-  check_initialization_complete (player);
   pthread_create (&priv->gst_app_thread, NULL, &thread_function, player);
 
   return TRUE;
@@ -590,8 +523,6 @@ gst_media_player_finalize (GObject * obj)
 
   player = GST_MEDIA_PLAYER (obj);
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
-
-  gst_media_player_release_native_window (player);
 
   if (priv->main_loop != NULL) {
     GST_DEBUG ("Quitting main loop...");
@@ -630,6 +561,16 @@ gst_media_player_finalize (GObject * obj)
   if (priv->pass != NULL) {
     g_free (priv->pass);
     priv->pass = NULL;
+  }
+
+  if (priv->viewer != NULL) {
+    g_object_unref (priv->viewer);
+    priv->viewer = NULL;
+  }
+
+  if (priv->streamer != NULL) {
+    g_object_unref (priv->streamer);
+    priv->streamer = NULL;
   }
 
   GST_DEBUG ("Done with cleanup");
@@ -724,76 +665,4 @@ gst_media_player_set_uri (GstMediaPlayer * player, const gchar * uri, const gcha
   priv->is_live = (gst_element_set_state (priv->pipeline, priv->target_state) == GST_STATE_CHANGE_NO_PREROLL);
 
   return;
-}
-
-/**
- * gst_media_player_release_native_window:
- * @player: a #GstMediaPlayer
- * @native_window: a #ANativeWindow
- *
- * Adds a new android window. Can be released with gst_media_player_release_native_window().
- * The gst_initialized() callback will be emitted when window has been set and the player is
- * ready to accept new commands.
- */
-void
-gst_media_player_set_native_window (GstMediaPlayer * player, ANativeWindow * native_window)
-{
-  GstMediaPlayerPrivate *priv;
-
-  g_return_if_fail (GST_IS_MEDIA_PLAYER (player));
-
-  GST_DEBUG ("Setting new native window %p", native_window);
-
-  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
-
-  if (priv->native_window != NULL) {
-    ANativeWindow_release (priv->native_window);
-
-    if (priv->native_window == native_window) {
-      GST_DEBUG ("New native window is the same as the previous one %p", priv->native_window);
-      if (priv->pipeline) {
-        gst_video_overlay_expose(GST_VIDEO_OVERLAY (priv->pipeline));
-      }
-      return;
-    } else {
-      GST_DEBUG ("Released previous native window %p", priv->native_window);
-      gst_media_player_release_native_window (player);
-    }
-  }
-
-  priv->native_window = native_window;
-
-  check_initialization_complete (player);
-}
-
-/**
- * gst_media_player_release_native_window:
- * @player: a #GstMediaPlayer
- *
- * Releases android window previously set with gst_media_player_set_native_window().
- */
-void
-gst_media_player_release_native_window (GstMediaPlayer * player)
-{
-  GstMediaPlayerPrivate *priv;
-
-  g_return_if_fail (GST_IS_MEDIA_PLAYER (player));
-
-  GST_DEBUG ("releasing native window");
-
-  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
-
-  GST_DEBUG ("Releasing Native Window %p", priv->native_window);
-
-  if (priv->pipeline != NULL) {
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline), (guintptr)NULL);
-    gst_element_set_state (priv->pipeline, GST_STATE_READY);
-  }
-
-  if (priv->native_window != NULL) {
-    ANativeWindow_release (priv->native_window);
-    priv->native_window = NULL;
-  }
-
-  priv->initialized = FALSE;
 }
