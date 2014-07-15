@@ -73,8 +73,10 @@ static guint gst_media_player_signals[SIGNAL_LAST] = { 0 };
 static void execute_seek (GstMediaPlayer * player, gint64 desired_position);
 static gboolean delayed_seek_cb (gpointer user_data);
 static void gst_media_player_finalize (GObject * obj);
-static void gst_media_player_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void gst_media_player_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void gst_media_player_get_property (GObject *object, guint property_id,
+    GValue *value, GParamSpec *pspec);
+static void gst_media_player_set_property (GObject *object, guint property_id,
+    const GValue *value, GParamSpec *pspec);
 
 G_DEFINE_TYPE (GstMediaPlayer, gst_media_player, G_TYPE_OBJECT);
 
@@ -97,12 +99,14 @@ gst_media_player_class_init (GstMediaPlayerClass * klass)
   gobject_class->set_property = gst_media_player_set_property;
 
   g_object_class_install_property (gobject_class,
-      PROP_RTSP_STREAMER, g_param_spec_object ("rtsp-streamer", "RTSPStreamer", "RTSP Streamer",
-      GST_TYPE_RTSP_STREAMER, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+      PROP_RTSP_STREAMER, g_param_spec_object ("rtsp-streamer", "RTSPStreamer",
+      "RTSP Streamer", GST_TYPE_RTSP_STREAMER, G_PARAM_READWRITE |
+      G_PARAM_CONSTRUCT_ONLY));
 
   g_object_class_install_property (gobject_class,
-        PROP_RTSP_WINDOW_VIEWER, g_param_spec_object ("rtsp-window-viewer", "RTSPWindowViewer", "RTSP Window Viewer",
-        GST_TYPE_RTSP_WINDOW_VIEWER, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+      PROP_RTSP_WINDOW_VIEWER, g_param_spec_object ("rtsp-window-viewer",
+      "RTSPWindowViewer", "RTSP Window Viewer", GST_TYPE_RTSP_WINDOW_VIEWER,
+      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   gst_media_player_signals[SIGNAL_NEW_STATUS] =
       g_signal_new ("new-status", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
@@ -110,14 +114,15 @@ gst_media_player_class_init (GstMediaPlayerClass * klass)
       g_cclosure_marshal_VOID__CHAR, G_TYPE_NONE, 1, G_TYPE_POINTER);
 
   gst_media_player_signals[SIGNAL_ERROR] =
-        g_signal_new ("error", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
-        G_STRUCT_OFFSET (GstMediaPlayerClass, error), NULL, NULL,
-        g_cclosure_marshal_VOID__CHAR, G_TYPE_NONE, 1, G_TYPE_POINTER);
+      g_signal_new ("error", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
+      G_STRUCT_OFFSET (GstMediaPlayerClass, error), NULL, NULL,
+      g_cclosure_marshal_VOID__CHAR, G_TYPE_NONE, 1, G_TYPE_POINTER);
 
   gst_media_player_signals[SIGNAL_NEW_POSITION] =
-        g_signal_new ("new-position", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
-        G_STRUCT_OFFSET (GstMediaPlayerClass, new_position), NULL, NULL,
-        g_cclosure_user_marshal_VOID__INT_INT, G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_INT);
+      g_signal_new ("new-position", G_TYPE_FROM_CLASS (klass),
+      G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GstMediaPlayerClass, new_position),
+      NULL, NULL, g_cclosure_user_marshal_VOID__INT_INT, G_TYPE_NONE, 2,
+      G_TYPE_INT, G_TYPE_INT);
 }
 
 static void
@@ -548,7 +553,7 @@ gst_media_player_finalize (GObject * obj)
   priv->target_state = GST_STATE_NULL;
 
   if (priv->pipeline != NULL) {
-	GST_DEBUG ("Stopping pipeline");
+    GST_DEBUG ("Stopping pipeline");
     gst_element_set_state (priv->pipeline, GST_STATE_NULL);
     gst_object_unref (priv->pipeline);
     priv->pipeline = NULL;
