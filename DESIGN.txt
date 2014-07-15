@@ -11,18 +11,19 @@
 +------+     +--------------+        | GstMediaPlayer                    |<>--+    |   <<interface>>              |<------+     |
 |      |     |              |        |-----------------------------------|1        | GstRTSPStreamer              |<---+  |   +-----------------+
 |      |     |      C       |        |+media_player_new():GstMediaPlayer |         +------------------------------+    |  +---| GstRTSPRecorder |
-| Java |<--->| Native Layer |------->|+set_state():void                  |<>-------|+create_pipeline():GstElement |    |      +-----------------+
+| Java |<--->| Native Layer |------->|+setup_thread():bool               |<>-------|+create_pipeline():GstElement |    |      +-----------------+
 |      |     |              |<<use>> |+set_position():void               |1       1+------------------------------+    |
 |      |     |              |        |+set_uri():void                    |                                            +----------------+
-+------+     +--------------+        |+set_window():void                 |                                      +-----| GstRTSPViewer  |
-                                     |+release_window():void             |                                      |     +----------------+
-                                     |+set_location():void               |                                      |
++------+     +--------------+        |+set_state():void                  |                                      +-----| GstRTSPViewer  |
+                                     |                                   |                                      |     +----------------+
+                                     |                                   |                                      |
                                      +-----------------------------------+         +------------------------+   |
                                      |+status-updated                    |<>-------|   <<interface>>        |<--+
                                      |+error-occured                     |1    0..1| GstRTSPWindowViewer    |
-                                     |+gst-initialized                   |         +------------------------+
-                                     |+size-changed                      |         |+set_window():void      |
-                                     |+position-changed                  |         |+release_window():void  |
-                                     +-----------------------------------+         |+query_resolution()     |
+                                     |+position-changed                  |         +------------------------+
+                                     |                                   |         |+set_window():void      |
+                                     |                                   |         |+release_window():void  |
+                                     +-----------------------------------+         |                        |
                                      |-pipeline                          |         +------------------------+
-                                     +-----------------------------------+
+                                     +-----------------------------------+         |+size-changed           |
+                                                                                   +------------------------+
