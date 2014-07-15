@@ -27,6 +27,8 @@
 #include <pthread.h>
 
 #include "mediaplayer.h"
+#include "rtspstreamer.h"
+#include "rtspviewer.h"
 
 GST_DEBUG_CATEGORY_STATIC (debug_category);
 #define GST_CAT_DEFAULT debug_category
@@ -207,13 +209,17 @@ static jlong
 gst_native_player_create (JNIEnv * env, jobject thiz)
 {
   GstMediaPlayer *player;
+  GstRTSPStreamer *streamer;
   CustomData *data;
   jlong result;
 
   data = g_new0 (CustomData, 1);
   GST_DEBUG ("Created CustomData at %p", data);
 
-  player = gst_media_player_new ();
+  streamer = g_object_new (GST_TYPE_RTSP_VIEWER, NULL);
+
+  player = gst_media_player_new (streamer);
+
   g_signal_connect (G_OBJECT (player), "new-status", (GCallback) new_status,
       data);
   g_signal_connect (G_OBJECT (player), "error", (GCallback) error, data);

@@ -21,6 +21,7 @@
 
 #include "mediaplayer.h"
 #include "media-player-marshal.h"
+#include "rtspstreamer.h"
 
 #define GST_MEDIA_PLAYER_GET_PRIVATE(obj)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), GST_TYPE_MEDIA_PLAYER, GstMediaPlayerPrivate))
@@ -41,11 +42,19 @@ struct _GstMediaPlayerPrivate
   gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
   ANativeWindow *native_window; /* The Android native window where video will be rendered */
   pthread_t gst_app_thread;     /* The thread running the main loop */
+  GstRTSPStreamer *streamer;
 };
 
 /* Do not allow seeks to be performed closer than this distance. It is visually useless, and will probably
  * confuse some demuxers. */
 #define SEEK_MIN_DELAY (500 * GST_MSECOND)
+
+/* object properties */
+enum
+{
+  PROP_0,
+  PROP_RTSP_VIEWER
+};
 
 enum
 {
@@ -65,6 +74,8 @@ static guint gst_media_player_signals[SIGNAL_LAST] = { 0 };
 static void execute_seek (GstMediaPlayer * player, gint64 desired_position);
 static gboolean delayed_seek_cb (gpointer user_data);
 static void gst_media_player_finalize (GObject * obj);
+static void gst_media_player_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+static void gst_media_player_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 
 G_DEFINE_TYPE (GstMediaPlayer, gst_media_player, G_TYPE_OBJECT);
 
@@ -83,6 +94,12 @@ gst_media_player_class_init (GstMediaPlayerClass * klass)
   gobject_class = G_OBJECT_CLASS (klass);
 
   gobject_class->finalize = gst_media_player_finalize;
+  gobject_class->get_property = gst_media_player_get_property;
+  gobject_class->set_property = gst_media_player_set_property;
+
+  g_object_class_install_property (gobject_class,
+      PROP_RTSP_VIEWER, g_param_spec_object ("rtsp-streamer", "RTSPStreamer", "RTSP Streamer",
+      GST_TYPE_RTSP_STREAMER, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   gst_media_player_signals[SIGNAL_NEW_STATUS] =
       g_signal_new ("new-status", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
@@ -115,12 +132,42 @@ gst_media_player_init (GstMediaPlayer * player)
 {
 }
 
+static void
+gst_media_player_get_property (GObject *object, guint property_id, GValue *value,
+    GParamSpec *pspec)
+{
+  GstMediaPlayer *player = GST_MEDIA_PLAYER (object);
+  GstMediaPlayerPrivate *priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
+
+  switch (property_id)
+  {
+    case PROP_RTSP_VIEWER:
+      g_value_set_object (value, priv->streamer);
+      break;
+  }
+}
+
+static void
+gst_media_player_set_property (GObject *object, guint property_id,
+    const GValue *value, GParamSpec *pspec)
+{
+  GstMediaPlayer *player = GST_MEDIA_PLAYER (object);
+  GstMediaPlayerPrivate *priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
+
+  switch (property_id)
+  {
+    case PROP_RTSP_VIEWER:
+      priv->streamer = g_value_get_object (value);
+      break;
+  }
+}
+
 GstMediaPlayer*
-gst_media_player_new ()
+gst_media_player_new (GstRTSPStreamer * streamer)
 {
   GstMediaPlayer *player;
 
-  player = g_object_new (GST_TYPE_MEDIA_PLAYER, NULL);
+  player = g_object_new (GST_TYPE_MEDIA_PLAYER, "rtsp-streamer", streamer, NULL);
 
   return player;
 }
@@ -480,7 +527,7 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  priv->pipeline = gst_parse_launch("playbin", error);
+  priv->pipeline = gst_rtsp_streamer_create_pipeline (priv->streamer, error);
   if (priv->pipeline == NULL) {
     return FALSE;
   }

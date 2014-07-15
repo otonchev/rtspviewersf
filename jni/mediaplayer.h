@@ -24,6 +24,8 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
+#include "rtspstreamer.h"
+
 G_BEGIN_DECLS
 
 typedef struct _GstMediaPlayer GstMediaPlayer;
@@ -68,7 +70,7 @@ struct _GstMediaPlayerClass {
 
 GType gst_media_player_get_type (void);
 
-GstMediaPlayer *gst_media_player_new();
+GstMediaPlayer *gst_media_player_new(GstRTSPStreamer * streamer);
 gboolean gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error);
 gboolean gst_media_player_set_state (GstMediaPlayer * player, GstState state);
 gboolean gst_media_player_set_position (GstMediaPlayer * player, gint64 position);
