@@ -131,8 +131,8 @@ gst_media_player_init (GstMediaPlayer * player)
 }
 
 static void
-gst_media_player_get_property (GObject *object, guint property_id, GValue *value,
-    GParamSpec *pspec)
+gst_media_player_get_property (GObject *object, guint property_id,
+    GValue *value, GParamSpec *pspec)
 {
   GstMediaPlayer *player = GST_MEDIA_PLAYER (object);
   GstMediaPlayerPrivate *priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
@@ -177,8 +177,8 @@ gst_media_player_new (GstRTSPStreamer * streamer, GstRTSPWindowViewer * viewer)
   return player;
 }
 
-/* Perform seek, if we are not too close to the previous seek. Otherwise, schedule the seek for
- * some time in the future. */
+/* Perform seek, if we are not too close to the previous seek. Otherwise,
+ * schedule the seek for some time in the future. */
 static void
 execute_seek (GstMediaPlayer * player, gint64 desired_position)
 {
@@ -199,28 +199,34 @@ execute_seek (GstMediaPlayer * player, gint64 desired_position)
     GSource *timeout_source;
 
     if (priv->desired_position == GST_CLOCK_TIME_NONE) {
-      /* There was no previous seek scheduled. Setup a timer for some time in the future */
-      timeout_source = g_timeout_source_new ((SEEK_MIN_DELAY - diff) / GST_MSECOND);
-      g_source_set_callback (timeout_source, (GSourceFunc)delayed_seek_cb, player, NULL);
+      /* There was no previous seek scheduled. Setup a timer for some time in
+       * the future */
+      timeout_source =
+          g_timeout_source_new ((SEEK_MIN_DELAY - diff) / GST_MSECOND);
+      g_source_set_callback (timeout_source, (GSourceFunc)delayed_seek_cb,
+          player, NULL);
       g_source_attach (timeout_source, priv->context);
       g_source_unref (timeout_source);
     }
-    /* Update the desired seek position. If multiple petitions are received before it is time
-     * to perform a seek, only the last one is remembered. */
+    /* Update the desired seek position. If multiple petitions are received
+     * before it is time to perform a seek, only the last one is remembered. */
     priv->desired_position = desired_position;
-    GST_DEBUG ("Throttling seek to %" GST_TIME_FORMAT ", will be in %" GST_TIME_FORMAT,
-        GST_TIME_ARGS (desired_position), GST_TIME_ARGS (SEEK_MIN_DELAY - diff));
+    GST_DEBUG ("Throttling seek to %" GST_TIME_FORMAT ",
+        will be in %" GST_TIME_FORMAT, GST_TIME_ARGS (desired_position),
+        GST_TIME_ARGS (SEEK_MIN_DELAY - diff));
   } else {
     /* Perform the seek now */
-    GST_DEBUG ("Seeking to %" GST_TIME_FORMAT, GST_TIME_ARGS (desired_position));
+    GST_DEBUG ("Seeking to %" GST_TIME_FORMAT,
+        GST_TIME_ARGS (desired_position));
     priv->last_seek_time = gst_util_get_timestamp ();
-    gst_element_seek_simple (priv->pipeline, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH |
-        GST_SEEK_FLAG_KEY_UNIT, desired_position);
+    gst_element_seek_simple (priv->pipeline, GST_FORMAT_TIME,
+        GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT, desired_position);
     priv->desired_position = GST_CLOCK_TIME_NONE;
   }
 }
 
-/* Delayed seek callback. This gets called by the timer setup in the above function. */
+/* Delayed seek callback. This gets called by the timer setup in the above
+ * function. */
 static gboolean
 delayed_seek_cb (gpointer user_data)
 {
@@ -229,7 +235,8 @@ delayed_seek_cb (gpointer user_data)
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  GST_DEBUG ("Doing delayed seek to %" GST_TIME_FORMAT, GST_TIME_ARGS (priv->desired_position));
+  GST_DEBUG ("Doing delayed seek to %" GST_TIME_FORMAT,
+      GST_TIME_ARGS (priv->desired_position));
 
   execute_seek (player, priv->desired_position);
   return FALSE;
@@ -249,17 +256,20 @@ error_cb (GstBus *bus, GstMessage *msg, gpointer userdata)
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
   gst_message_parse_error (msg, &err, &debug_info);
-  message_string = g_strdup_printf ("Error received from element %s: %s", GST_OBJECT_NAME (msg->src), err->message);
+  message_string = g_strdup_printf ("Error received from element %s: %s",
+      GST_OBJECT_NAME (msg->src), err->message);
   g_clear_error (&err);
   g_free (debug_info);
 
-  g_signal_emit (player, gst_media_player_signals[SIGNAL_ERROR], 0, message_string, NULL);
+  g_signal_emit (player, gst_media_player_signals[SIGNAL_ERROR], 0,
+      message_string, NULL);
 
   g_free (message_string);
   priv->target_state = GST_STATE_NULL;
   gst_element_set_state (priv->pipeline, GST_STATE_NULL);
 
-  g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0, "STOPPED", NULL);
+  g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0,
+      "STOPPED", NULL);
 }
 
 static void
@@ -273,7 +283,8 @@ eos_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
   priv->target_state = GST_STATE_PAUSED;
-  priv->is_live = (gst_element_set_state (priv->pipeline, GST_STATE_PAUSED) == GST_STATE_CHANGE_NO_PREROLL);
+  priv->is_live = (gst_element_set_state (priv->pipeline, GST_STATE_PAUSED) ==
+      GST_STATE_CHANGE_NO_PREROLL);
   execute_seek (player, 0);
 }
 
@@ -291,18 +302,22 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
   gst_message_parse_state_changed (msg, &old_state, &new_state, &pending_state);
-  /* Only pay attention to messages coming from the pipeline, not its children */
+  /* Only pay attention to messages coming from the pipeline, not its
+   * children */
   if (GST_MESSAGE_SRC (msg) == GST_OBJECT (priv->pipeline)) {
     priv->state = new_state;
-    gchar *message = g_strdup_printf("%s", gst_element_state_get_name (new_state));
+    gchar *message =
+        g_strdup_printf ("%s", gst_element_state_get_name (new_state));
 
-    g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0, message, NULL);
+    g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0,
+        message, NULL);
 
     g_free (message);
 
     /* The Ready to Paused state change is particularly interesting: */
     if (old_state == GST_STATE_READY && new_state == GST_STATE_PAUSED) {
-       /* If there was a scheduled seek, perform it now that we have moved to the Paused state */
+       /* If there was a scheduled seek, perform it now that we have moved to
+        * the Paused state */
       if (GST_CLOCK_TIME_IS_VALID (priv->desired_position))
         execute_seek (player, priv->desired_position);
     }
@@ -323,7 +338,8 @@ need_data_cb (GstElement *playbin, GstElement *rtspsrc, gpointer user_data)
   g_object_set (G_OBJECT (rtspsrc), "user-pw", priv->pass, NULL);
 }
 
-/* Called when the duration of the media changes. Just mark it as unknown, so we re-query it in the next UI refresh. */
+/* Called when the duration of the media changes. Just mark it as unknown, so we
+ * re-query it in the next UI refresh. */
 static void
 duration_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
 {
@@ -337,8 +353,9 @@ duration_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
   priv->duration = GST_CLOCK_TIME_NONE;
 }
 
-/* Called when buffering messages are received. We inform the UI about the current buffering level and
- * keep the pipeline paused until 100% buffering is reached. At that point, set the desired state. */
+/* Called when buffering messages are received. We inform the UI about the
+ * current buffering level and keep the pipeline paused until 100% buffering is
+ * reached. At that point, set the desired state. */
 static void
 buffering_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
 {
@@ -358,13 +375,15 @@ buffering_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
     gchar * message_string = g_strdup_printf ("Buffering %d%%", percent);
     gst_element_set_state (priv->pipeline, GST_STATE_PAUSED);
 
-    g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0, message_string, NULL);
+    g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0,
+        message_string, NULL);
 
     g_free (message_string);
   } else if (priv->target_state >= GST_STATE_PLAYING) {
     gst_element_set_state (priv->pipeline, GST_STATE_PLAYING);
   } else if (priv->target_state >= GST_STATE_PAUSED) {
-    g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0, "Buffering complete", NULL);
+    g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_STATUS], 0,
+        "Buffering complete", NULL);
   }
 }
 
@@ -385,8 +404,8 @@ clock_lost_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
   }
 }
 
-/* If we have pipeline and it is running, query the current position and clip duration and inform
- * the application */
+/* If we have pipeline and it is running, query the current position and clip
+ * duration and inform the application */
 static gboolean
 check_position (gpointer user_data)
 {
@@ -400,24 +419,28 @@ check_position (gpointer user_data)
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  /* We do not want to update anything unless we have a working pipeline in the PAUSED or PLAYING state */
+  /* We do not want to update anything unless we have a working pipeline in the
+   * PAUSED or PLAYING state */
   if (!priv || !priv->pipeline || priv->state < GST_STATE_PAUSED)
     return TRUE;
 
   /* If we didn't know it yet, query the stream duration */
   if (!GST_CLOCK_TIME_IS_VALID (priv->duration)) {
     if (!gst_element_query_duration (priv->pipeline, fmt, &priv->duration)) {
-      GST_WARNING ("Could not query current duration (normal for still pictures)");
+      GST_WARNING ("Could not query current duration (normal for still "
+          "pictures)");
       priv->duration = 0;
     }
   }
 
   if (!gst_element_query_position (priv->pipeline, fmt, &position)) {
-    GST_WARNING ("Could not query current position (normal for still pictures)");
+    GST_WARNING ("Could not query current position (normal for still "
+        "pictures)");
     position = 0;
   }
 
-  /* Java expects these values in milliseconds, and GStreamer provides nanoseconds */
+  /* Java expects these values in milliseconds, and GStreamer provides
+   * nanoseconds */
   g_signal_emit (player, gst_media_player_signals[SIGNAL_NEW_POSITION], 0,
       position / GST_MSECOND, priv->duration / GST_MSECOND, NULL);
 
@@ -434,7 +457,7 @@ thread_function (void *user_data)
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  g_main_context_push_thread_default(priv->context);
+  g_main_context_push_thread_default (priv->context);
 
   g_main_loop_run (priv->main_loop);
 
@@ -469,7 +492,8 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   GST_DEBUG ("Creating main context... (GstMediaPlayer: %p)", player);
   priv->context = g_main_context_new ();
 
-  priv->pipeline = gst_rtsp_streamer_create_pipeline (priv->streamer, priv->context, error);
+  priv->pipeline = gst_rtsp_streamer_create_pipeline (priv->streamer,
+      priv->context, error);
   if (priv->pipeline == NULL) {
     return FALSE;
   }
@@ -479,24 +503,33 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   flags &= ~GST_PLAY_FLAG_TEXT;
   g_object_set (priv->pipeline, "flags", flags, NULL);
 
-  g_signal_connect (priv->pipeline, "source-setup", G_CALLBACK (need_data_cb), player);
+  g_signal_connect (priv->pipeline, "source-setup", G_CALLBACK (need_data_cb),
+      player);
 
-  /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
+  /* Set the pipeline to READY, so it can already accept a window handle, if we
+   * have one */
   priv->target_state = GST_STATE_READY;
-  gst_element_set_state(priv->pipeline, GST_STATE_READY);
+  gst_element_set_state (priv->pipeline, GST_STATE_READY);
 
-  /* Instruct the bus to emit signals for each received message, and connect to the interesting signals */
+  /* Instruct the bus to emit signals for each received message, and connect to
+   * the interesting signals */
   bus = gst_element_get_bus (priv->pipeline);
   bus_source = gst_bus_create_watch (bus);
-  g_source_set_callback (bus_source, (GSourceFunc) gst_bus_async_signal_func, NULL, NULL);
+  g_source_set_callback (bus_source, (GSourceFunc) gst_bus_async_signal_func,
+      NULL, NULL);
   g_source_attach (bus_source, priv->context);
   g_source_unref (bus_source);
-  g_signal_connect (G_OBJECT (bus), "message::error", (GCallback)error_cb, player);
+  g_signal_connect (G_OBJECT (bus), "message::error", (GCallback)error_cb,
+      player);
   g_signal_connect (G_OBJECT (bus), "message::eos", (GCallback)eos_cb, player);
-  g_signal_connect (G_OBJECT (bus), "message::state-changed", (GCallback)state_changed_cb, player);
-  g_signal_connect (G_OBJECT (bus), "message::duration", (GCallback)duration_cb, player);
-  g_signal_connect (G_OBJECT (bus), "message::buffering", (GCallback)buffering_cb, player);
-  g_signal_connect (G_OBJECT (bus), "message::clock-lost", (GCallback)clock_lost_cb, player);
+  g_signal_connect (G_OBJECT (bus), "message::state-changed",
+      (GCallback)state_changed_cb, player);
+  g_signal_connect (G_OBJECT (bus), "message::duration", (GCallback)duration_cb,
+      player);
+  g_signal_connect (G_OBJECT (bus), "message::buffering",
+      (GCallback)buffering_cb, player);
+  g_signal_connect (G_OBJECT (bus), "message::clock-lost",
+      (GCallback)clock_lost_cb, player);
   gst_object_unref (bus);
 
   /* Create a GLib Main Loop */
@@ -505,7 +538,8 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
 
   /* Register a function that GLib will call 4 times per second */
   timeout_source = g_timeout_source_new (250);
-  g_source_set_callback (timeout_source, (GSourceFunc)check_position, player, NULL);
+  g_source_set_callback (timeout_source, (GSourceFunc)check_position, player,
+      NULL);
   g_source_attach (timeout_source, priv->context);
   g_source_unref (timeout_source);
 
@@ -513,7 +547,7 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   priv->last_seek_time = GST_CLOCK_TIME_NONE;
 
   GST_DEBUG_CATEGORY_INIT (debug_category, "mediaplayer", 0, "Media Player");
-  gst_debug_set_threshold_for_name("mediaplayer", GST_LEVEL_DEBUG);
+  gst_debug_set_threshold_for_name ("mediaplayer", GST_LEVEL_DEBUG);
 
   pthread_create (&priv->gst_app_thread, NULL, &thread_function, player);
 
@@ -600,7 +634,8 @@ gst_media_player_set_state (GstMediaPlayer * player, GstState state)
 
   GST_DEBUG ("Setting state to %d", state);
   priv->target_state = state;
-  priv->is_live = (gst_element_set_state (priv->pipeline, state) == GST_STATE_CHANGE_NO_PREROLL);
+  priv->is_live = (gst_element_set_state (priv->pipeline, state) ==
+      GST_STATE_CHANGE_NO_PREROLL);
 
   return TRUE;
 }
@@ -623,7 +658,8 @@ gst_media_player_set_position (GstMediaPlayer * player, gint64 position)
   if (priv->state >= GST_STATE_PAUSED) {
     execute_seek (player, position);
   } else {
-    GST_DEBUG ("Scheduling seek to %" GST_TIME_FORMAT " for later", GST_TIME_ARGS (position));
+    GST_DEBUG ("Scheduling seek to %" GST_TIME_FORMAT " for later",
+        GST_TIME_ARGS (position));
     priv->desired_position = position;
   }
 
@@ -637,10 +673,11 @@ gst_media_player_set_position (GstMediaPlayer * player, gint64 position)
  * @user: user id for the RTSP authentication
  * @pass: password for the RTSP authentication
  *
- * Adds a new android window. Can be released with gst_media_player_set_native_window().
+ * Sets the source Uri.
  */
 void
-gst_media_player_set_uri (GstMediaPlayer * player, const gchar * uri, const gchar * user, const gchar * pass)
+gst_media_player_set_uri (GstMediaPlayer * player, const gchar * uri,
+    const gchar * user, const gchar * pass)
 {
   GstMediaPlayerPrivate *priv;
 
@@ -664,10 +701,9 @@ gst_media_player_set_uri (GstMediaPlayer * player, const gchar * uri, const gcha
 
   if (priv->target_state >= GST_STATE_READY)
     gst_element_set_state (priv->pipeline, GST_STATE_READY);
-  g_object_set(priv->pipeline, "uri", uri, NULL);
+  g_object_set (priv->pipeline, "uri", uri, NULL);
 
   priv->duration = GST_CLOCK_TIME_NONE;
-  priv->is_live = (gst_element_set_state (priv->pipeline, priv->target_state) == GST_STATE_CHANGE_NO_PREROLL);
-
-  return;
+  priv->is_live = (gst_element_set_state (priv->pipeline, priv->target_state) ==
+      GST_STATE_CHANGE_NO_PREROLL);
 }

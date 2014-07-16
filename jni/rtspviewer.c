@@ -40,6 +40,9 @@ struct _GstRTSPViewerPrivate
   ANativeWindow *native_window;
 };
 
+GST_DEBUG_CATEGORY_STATIC (debug_category);
+#define GST_CAT_DEFAULT debug_category
+
 static void gst_rtsp_viewer_finalize (GObject * obj);
 static void gst_rtsp_viewer_streamer_interface_init (GstRTSPStreamerInterface *
     iface);
@@ -67,6 +70,9 @@ gst_rtsp_viewer_class_init (GstRTSPViewerClass * klass)
   gobject_class = G_OBJECT_CLASS (klass);
 
   gobject_class->finalize = gst_rtsp_viewer_finalize;
+
+  GST_DEBUG_CATEGORY_INIT (debug_category, "rtspviewer", 0, "RTSP Viewer");
+  gst_debug_set_threshold_for_name ("rtspviewer", GST_LEVEL_DEBUG);
 }
 
 static void
@@ -119,6 +125,8 @@ check_media_size (GstRTSPViewer *viewer)
   GstVideoInfo vinfo;
   GstRTSPViewerPrivate *priv;
 
+  GST_DEBUG ("checking size");
+
   priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
 
   /* Retrieve the Caps at the entrance of the video sink */
@@ -127,23 +135,23 @@ check_media_size (GstRTSPViewer *viewer)
   caps = gst_pad_get_current_caps (video_sink_pad);
 
   if (gst_video_info_from_caps (&vinfo, caps)) {
-	int par_n, par_d;
+    int par_n, par_d;
 
-	width = vinfo.width;
-	height = vinfo.height;
-	par_n = vinfo.par_n;
-	par_d = vinfo.par_d;
+    width = vinfo.width;
+    height = vinfo.height;
+    par_n = vinfo.par_n;
+    par_d = vinfo.par_d;
 
     width = width * par_n / par_d;
 
-	GST_DEBUG ("Media size is %dx%d, notifying application", width, height);
+    GST_DEBUG ("Media size is %dx%d, notifying application", width, height);
 
     g_signal_emit_by_name (viewer, "size-changed", 0, width, height, NULL);
   }
 
-  gst_caps_unref(caps);
+  gst_caps_unref (caps);
   gst_object_unref (video_sink_pad);
-  gst_object_unref(video_sink);
+  gst_object_unref (video_sink);
 }
 
 static void
@@ -160,7 +168,8 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
   priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
 
   gst_message_parse_state_changed (msg, &old_state, &new_state, &pending_state);
-  /* Only pay attention to messages coming from the pipeline, not its children */
+  /* Only pay attention to messages coming from the pipeline, not its
+   * children */
   if (GST_MESSAGE_SRC (msg) == GST_OBJECT (priv->pipeline)) {
     /* The Ready to Paused state change is particularly interesting: */
     if (old_state == GST_STATE_READY && new_state == GST_STATE_PAUSED) {
@@ -171,7 +180,8 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
 }
 
 static GstElement *
-gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer, GMainContext * context, GError ** error)
+gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
+    GMainContext * context, GError ** error)
 {
   GstElement * pipeline;
   GstBus *bus;
@@ -180,14 +190,16 @@ gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer, GMainContext * cont
 
   priv = GST_RTSP_VIEWER_GET_PRIVATE (streamer);
 
-  priv->pipeline = gst_parse_launch("playbin", error);
+  priv->pipeline = gst_parse_launch ("playbin", error);
 
   bus = gst_element_get_bus (priv->pipeline);
   bus_source = gst_bus_create_watch (bus);
-  g_source_set_callback (bus_source, (GSourceFunc) gst_bus_async_signal_func, NULL, NULL);
+  g_source_set_callback (bus_source, (GSourceFunc) gst_bus_async_signal_func,
+      NULL, NULL);
   g_source_attach (bus_source, context);
   g_source_unref (bus_source);
-  g_signal_connect (G_OBJECT (bus), "message::state-changed", (GCallback)state_changed_cb, streamer);
+  g_signal_connect (G_OBJECT (bus), "message::state-changed",
+      (GCallback)state_changed_cb, streamer);
   gst_object_unref (bus);
 
   return priv->pipeline;
@@ -202,10 +214,8 @@ gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
   priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
 
   if (priv->native_window != NULL) {
-    ANativeWindow_release (priv->native_window);
-
     if (priv->native_window == native_window) {
-      if (priv->pipeline) {
+      if (priv->pipeline != NULL) {
         gst_video_overlay_expose (GST_VIDEO_OVERLAY (priv->pipeline));
       }
       return;
@@ -215,7 +225,8 @@ gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
   }
 
   priv->native_window = native_window;
-  gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline), (guintptr)priv->native_window);
+  gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline),
+      (guintptr)priv->native_window);
 }
 
 static void
@@ -226,7 +237,8 @@ gst_rtsp_viewer_release_window (GstRTSPWindowViewer * viewer)
   priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
 
   if (priv->pipeline != NULL) {
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline), (guintptr)NULL);
+    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline),
+        (guintptr)NULL);
     gst_element_set_state (priv->pipeline, GST_STATE_READY);
   }
 
