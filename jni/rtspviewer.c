@@ -161,7 +161,7 @@ check_media_size (GstRTSPViewer *viewer)
 
     GST_DEBUG ("Media size is %dx%d, notifying application", width, height);
 
-    g_signal_emit_by_name (viewer, "size-changed", 0, width, height, NULL);
+    g_signal_emit_by_name (viewer, "size-changed", width, height);
   }
 
   gst_caps_unref (caps);
@@ -187,7 +187,8 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
    * children */
   if (GST_MESSAGE_SRC (msg) == GST_OBJECT (priv->pipeline)) {
     /* The Ready to Paused state change is particularly interesting: */
-    if (old_state == GST_STATE_READY && new_state == GST_STATE_PAUSED) {
+    if ((old_state < new_state) && (new_state == GST_STATE_PAUSED ||
+        new_state == GST_STATE_PLAYING)) {
       /* By now the sink already knows the media size */
       check_media_size (viewer);
     }

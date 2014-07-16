@@ -54,5 +54,5 @@ gst_rtsp_window_viewer_default_init (GstRTSPWindowViewerInterface * viewer)
   gst_rtsp_window_viewer_signals[SIGNAL_SIZE_CHANGED] =
       g_signal_new ("size-changed", G_TYPE_FROM_INTERFACE (viewer), G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (GstRTSPWindowViewerInterface, size_changed), NULL, NULL,
-      g_cclosure_user_marshal_VOID__INT_INT, G_TYPE_NONE, 1, G_TYPE_INT, G_TYPE_INT);
+      g_cclosure_user_marshal_VOID__INT_INT, G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_INT);
 }
