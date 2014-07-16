@@ -38,6 +38,8 @@ struct _GstRTSPViewerPrivate
 {
   GstElement *pipeline;
   ANativeWindow *native_window;
+  gchar *user;
+  gchar *pass;
 };
 
 GST_DEBUG_CATEGORY_STATIC (debug_category);
@@ -48,6 +50,8 @@ static void gst_rtsp_viewer_streamer_interface_init (GstRTSPStreamerInterface *
     iface);
 static GstElement * gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * iface,
     GMainContext * context, GError ** error);
+static void gst_rtsp_viewer_set_uri (GstRTSPStreamer * iface, const gchar * uri,
+    const gchar * user, const gchar * pass);
 static void gst_rtsp_viewer_window_viewer_interface_init (GstRTSPWindowViewerInterface *
     iface);
 static void gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
@@ -96,6 +100,16 @@ gst_rtsp_viewer_finalize (GObject * obj)
     priv->pipeline = NULL;
   }
 
+  if (priv->user != NULL) {
+    g_free (priv->user);
+    priv->user = NULL;
+  }
+
+  if (priv->pass != NULL) {
+    g_free (priv->pass);
+    priv->pass = NULL;
+  }
+
   G_OBJECT_CLASS (gst_rtsp_viewer_parent_class)->finalize (obj);
 }
 
@@ -103,6 +117,7 @@ static void
 gst_rtsp_viewer_streamer_interface_init (GstRTSPStreamerInterface * iface)
 {
   iface->create_pipeline = gst_rtsp_viewer_create_pipeline;
+  iface->set_uri = gst_rtsp_viewer_set_uri;
 }
 
 static void
@@ -179,6 +194,20 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
   }
 }
 
+static void
+need_data_cb (GstElement *playbin, GstElement *rtspsrc, gpointer user_data)
+{
+  GstRTSPViewerPrivate *priv;
+  GstRTSPViewer *viewer = GST_RTSP_VIEWER (user_data);
+
+  GST_DEBUG ("configuring source");
+
+  priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
+
+  g_object_set (G_OBJECT (rtspsrc), "user-id", priv->user, NULL);
+  g_object_set (G_OBJECT (rtspsrc), "user-pw", priv->pass, NULL);
+}
+
 static GstElement *
 gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
     GMainContext * context, GError ** error)
@@ -192,6 +221,9 @@ gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
 
   priv->pipeline = gst_parse_launch ("playbin", error);
 
+  g_signal_connect (priv->pipeline, "source-setup", G_CALLBACK (need_data_cb),
+      streamer);
+
   bus = gst_element_get_bus (priv->pipeline);
   bus_source = gst_bus_create_watch (bus);
   g_source_set_callback (bus_source, (GSourceFunc) gst_bus_async_signal_func,
@@ -203,6 +235,30 @@ gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
   gst_object_unref (bus);
 
   return priv->pipeline;
+}
+
+static void
+gst_rtsp_viewer_set_uri (GstRTSPStreamer * viewer, const gchar * uri,
+    const gchar * user, const gchar * pass)
+{
+  GstRTSPViewerPrivate *priv;
+
+  priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
+
+  g_return_if_fail (priv->pipeline != NULL);
+
+  GST_DEBUG ("Setting URI to %s(%s,%s) for viewer %p", uri, user, pass, viewer);
+
+  if (user != NULL && pass != NULL) {
+    if (priv->user != NULL)
+      g_free (priv->user);
+    if (priv->pass != NULL)
+      g_free (priv->pass);
+    priv->user = g_strdup (user);
+    priv->pass = g_strdup (pass);
+  }
+
+  g_object_set (priv->pipeline, "uri", uri, NULL);
 }
 
 static void

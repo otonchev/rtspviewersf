@@ -25,10 +25,19 @@
 G_DEFINE_INTERFACE (GstRTSPStreamer, gst_rtsp_streamer, G_TYPE_OBJECT);
 
 GstElement *
-gst_rtsp_streamer_create_pipeline (GstRTSPStreamer * streamer, GMainContext * context, GError ** error)
+gst_rtsp_streamer_create_pipeline (GstRTSPStreamer * streamer,
+    GMainContext * context, GError ** error)
 {
   return
-      GST_RTSP_STREMAER_GET_INTERFACE (streamer)->create_pipeline (streamer, context, error);
+      GST_RTSP_STREMAER_GET_INTERFACE (streamer)->create_pipeline (streamer,
+          context, error);
+}
+
+void
+gst_rtsp_streamer_set_uri (GstRTSPStreamer * streamer, const gchar * uri,
+    const gchar * user, const gchar * pass)
+{
+  GST_RTSP_STREMAER_GET_INTERFACE (streamer)->set_uri (streamer, uri, user, pass);
 }
 
 static void

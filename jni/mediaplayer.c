@@ -211,8 +211,8 @@ execute_seek (GstMediaPlayer * player, gint64 desired_position)
     /* Update the desired seek position. If multiple petitions are received
      * before it is time to perform a seek, only the last one is remembered. */
     priv->desired_position = desired_position;
-    GST_DEBUG ("Throttling seek to %" GST_TIME_FORMAT ",
-        will be in %" GST_TIME_FORMAT, GST_TIME_ARGS (desired_position),
+    GST_DEBUG ("Throttling seek to %" GST_TIME_FORMAT
+        ", will be in %" GST_TIME_FORMAT, GST_TIME_ARGS (desired_position),
         GST_TIME_ARGS (SEEK_MIN_DELAY - diff));
   } else {
     /* Perform the seek now */
@@ -322,20 +322,6 @@ state_changed_cb (GstBus *bus, GstMessage *msg, gpointer user_data)
         execute_seek (player, priv->desired_position);
     }
   }
-}
-
-static void
-need_data_cb (GstElement *playbin, GstElement *rtspsrc, gpointer user_data)
-{
-  GstMediaPlayerPrivate *priv;
-  GstMediaPlayer *player = (GstMediaPlayer *)user_data;
-
-  GST_DEBUG ("configuring source");
-
-  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
-
-  g_object_set (G_OBJECT (rtspsrc), "user-id", priv->user, NULL);
-  g_object_set (G_OBJECT (rtspsrc), "user-pw", priv->pass, NULL);
 }
 
 /* Called when the duration of the media changes. Just mark it as unknown, so we
@@ -503,9 +489,6 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   flags &= ~GST_PLAY_FLAG_TEXT;
   g_object_set (priv->pipeline, "flags", flags, NULL);
 
-  g_signal_connect (priv->pipeline, "source-setup", G_CALLBACK (need_data_cb),
-      player);
-
   /* Set the pipeline to READY, so it can already accept a window handle, if we
    * have one */
   priv->target_state = GST_STATE_READY;
@@ -633,6 +616,7 @@ gst_media_player_set_state (GstMediaPlayer * player, GstState state)
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
   GST_DEBUG ("Setting state to %d", state);
+  priv->duration = GST_CLOCK_TIME_NONE;
   priv->target_state = state;
   priv->is_live = (gst_element_set_state (priv->pipeline, state) ==
       GST_STATE_CHANGE_NO_PREROLL);
@@ -685,25 +669,14 @@ gst_media_player_set_uri (GstMediaPlayer * player, const gchar * uri,
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  if (priv->pipeline == NULL)
-    return;
-
-  if (user != NULL && pass != NULL) {
-    if (priv->user != NULL)
-      g_free (priv->user);
-    if (priv->pass != NULL)
-      g_free (priv->pass);
-    priv->user = g_strdup (user);
-    priv->pass = g_strdup (pass);
-  }
-
-  GST_DEBUG ("Setting URI to %s(%s,%s) for player %p", uri, user, pass, player);
+  g_return_if_fail (priv->pipeline != NULL);
+  g_return_if_fail (priv->streamer != NULL);
 
   if (priv->target_state >= GST_STATE_READY)
     gst_element_set_state (priv->pipeline, GST_STATE_READY);
-  g_object_set (priv->pipeline, "uri", uri, NULL);
 
-  priv->duration = GST_CLOCK_TIME_NONE;
+  gst_rtsp_streamer_set_uri (priv->streamer, uri, user, pass);
+
   priv->is_live = (gst_element_set_state (priv->pipeline, priv->target_state) ==
       GST_STATE_CHANGE_NO_PREROLL);
 }

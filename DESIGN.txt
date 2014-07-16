@@ -12,8 +12,8 @@
 |      |     |              |        |-----------------------------------|1        | GstRTSPStreamer              |<---+  |   +-----------------+
 |      |     |      C       |        |+media_player_new():GstMediaPlayer |         +------------------------------+    |  +---| GstRTSPRecorder |
 | Java |<--->| Native Layer |------->|+setup_thread():bool               |<>-------|+create_pipeline():GstElement |    |      +-----------------+
-|      |     |              |<<use>> |+set_position():void               |1       1+------------------------------+    |
-|      |     |              |        |+set_uri():void                    |                                            +----------------+
+|      |     |              |<<use>> |+set_position():void               |1       1|+set_uri():void               |    |
+|      |     |              |        |+set_uri():void                    |         +------------------------------+   +----------------+
 +------+     +--------------+        |+set_state():void                  |                                      +-----| GstRTSPViewer  |
                                      |                                   |                                      |     +----------------+
                                      |                                   |                                      |
