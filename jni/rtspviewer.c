@@ -45,6 +45,11 @@ struct _GstRTSPViewerPrivate
 GST_DEBUG_CATEGORY_STATIC (debug_category);
 #define GST_CAT_DEFAULT debug_category
 
+/* playbin flags */
+typedef enum {
+  GST_PLAY_FLAG_TEXT = (1 << 2)  /* We want subtitle output */
+} GstPlayFlags;
+
 static void gst_rtsp_viewer_finalize (GObject * obj);
 static void gst_rtsp_viewer_streamer_interface_init (GstRTSPStreamerInterface *
     iface);
@@ -224,6 +229,11 @@ gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
 
   g_signal_connect (priv->pipeline, "source-setup", G_CALLBACK (need_data_cb),
       streamer);
+
+  /* Disable subtitles */
+  g_object_get (priv->pipeline, "flags", &flags, NULL);
+  flags &= ~GST_PLAY_FLAG_TEXT;
+  g_object_set (priv->pipeline, "flags", flags, NULL);
 
   bus = gst_element_get_bus (priv->pipeline);
   bus_source = gst_bus_create_watch (bus);

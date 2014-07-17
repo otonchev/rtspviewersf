@@ -80,11 +80,6 @@ static void gst_media_player_set_property (GObject *object, guint property_id,
 
 G_DEFINE_TYPE (GstMediaPlayer, gst_media_player, G_TYPE_OBJECT);
 
-/* playbin flags */
-typedef enum {
-  GST_PLAY_FLAG_TEXT = (1 << 2)  /* We want subtitle output */
-} GstPlayFlags;
-
 static void
 gst_media_player_class_init (GstMediaPlayerClass * klass)
 {
@@ -483,11 +478,6 @@ gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
   if (priv->pipeline == NULL) {
     return FALSE;
   }
-
-  /* Disable subtitles */
-  g_object_get (priv->pipeline, "flags", &flags, NULL);
-  flags &= ~GST_PLAY_FLAG_TEXT;
-  g_object_set (priv->pipeline, "flags", flags, NULL);
 
   /* Set the pipeline to READY, so it can already accept a window handle, if we
    * have one */
