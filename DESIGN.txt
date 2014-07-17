@@ -15,8 +15,8 @@
 |      |     |              |<<use>> |+set_position():void               |1       1|+set_uri():void               |    |
 |      |     |              |        |+set_uri():void                    |         +------------------------------+   +----------------+
 +------+     +--------------+        |+set_state():void                  |                                      +-----| GstRTSPViewer  |
-                                     |                                   |                                      |     +----------------+
-                                     |                                   |                                      |
+                                     |+set_window():void                 |                                      |     +----------------+
+                                     |+release_window():void             |                                      |
                                      +-----------------------------------+         +------------------------+   |
                                      |+status-updated                    |<>-------|   <<interface>>        |<--+
                                      |+error-occured                     |1    0..1| GstRTSPWindowViewer    |

@@ -373,7 +373,6 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jlong datap,
 {
   ANativeWindow *new_native_window;
   CustomData *data;
-  GstRTSPWindowViewer *viewer = NULL;
 
   data = J_TO_NATIVEP (datap);
   if (!data)
@@ -384,18 +383,13 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jlong datap,
   GST_DEBUG ("Received surface %p (native window %p) %p", surface,
       new_native_window, data);
 
-  g_object_get (G_OBJECT (data->player), "rtsp-window-viewer", &viewer, NULL);
-  if (viewer != NULL) {
-    gst_rtsp_window_viewer_set_window (viewer, new_native_window);
-    g_object_unref (viewer);
-  }
+  gst_media_player_set_native_window (data->player, new_native_window);
 }
 
 static void
 gst_native_surface_finalize (JNIEnv * env, jobject thiz, jlong datap)
 {
   CustomData *data;
-  GstRTSPWindowViewer *viewer = NULL;
 
   data = J_TO_NATIVEP (datap);
   if (!data)
@@ -403,11 +397,7 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz, jlong datap)
 
   GST_DEBUG ("Releasing Native Window %p", data);
 
-  g_object_get (G_OBJECT (data->player), "rtsp-window-viewer", &viewer, NULL);
-  if (viewer != NULL) {
-    gst_rtsp_window_viewer_release_window (viewer);
-    g_object_unref (viewer);
-  }
+  gst_media_player_release_native_window (data->player);
 }
 
 /* List of implemented native methods */

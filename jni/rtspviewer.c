@@ -222,6 +222,7 @@ gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
   GstBus *bus;
   GSource *bus_source;
   GstRTSPViewerPrivate *priv;
+  guint flags;
 
   priv = GST_RTSP_VIEWER_GET_PRIVATE (streamer);
 

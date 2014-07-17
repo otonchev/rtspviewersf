@@ -461,7 +461,6 @@ gboolean
 gst_media_player_setup_thread (GstMediaPlayer *player, GError ** error)
 {
   GstMediaPlayerPrivate *priv;
-  guint flags;
   GstBus *bus;
   GSource *bus_source;
   GSource *timeout_source;
@@ -590,7 +589,7 @@ gst_media_player_finalize (GObject * obj)
 }
 
 /**
- * gst_media_player_set_position:
+ * gst_media_player_set_state:
  * @player: a #GstMediaPlayer
  * @state: a #GstState
  *
@@ -669,4 +668,54 @@ gst_media_player_set_uri (GstMediaPlayer * player, const gchar * uri,
 
   priv->is_live = (gst_element_set_state (priv->pipeline, priv->target_state) ==
       GST_STATE_CHANGE_NO_PREROLL);
+}
+
+/**
+ * gst_media_player_release_native_window:
+ * @player: a #GstMediaPlayer
+ * @native_window: a #ANativeWindow
+ *
+ * Adds a new android window. Can be released with
+ * gst_media_player_release_native_window ().
+ */
+void
+gst_media_player_set_native_window (GstMediaPlayer * player,
+    ANativeWindow * native_window)
+{
+  GstMediaPlayerPrivate *priv;
+
+  g_return_if_fail (GST_IS_MEDIA_PLAYER (player));
+
+  GST_DEBUG ("Setting new native window %p", native_window);
+
+  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
+
+  if (priv->viewer == NULL)
+    return;
+
+  gst_rtsp_window_viewer_set_window (priv->viewer, native_window);
+}
+
+/**
+ * gst_media_player_release_native_window:
+ * @player: a #GstMediaPlayer
+ *
+ * Releases android window previously set with
+ * gst_media_player_set_native_window ().
+ */
+void
+gst_media_player_release_native_window (GstMediaPlayer * player)
+{
+  GstMediaPlayerPrivate *priv;
+
+  g_return_if_fail (GST_IS_MEDIA_PLAYER (player));
+
+  GST_DEBUG ("Releasing native window");
+
+  priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
+
+  if (priv->viewer == NULL)
+    return;
+
+  gst_rtsp_window_viewer_release_window (priv->viewer);
 }
