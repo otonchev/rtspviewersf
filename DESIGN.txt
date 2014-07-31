@@ -1,6 +1,6 @@
                                                                                    +---------------------+
                                                                                    |   <<interface>>     |
-                                                                              +----| GstRTSPDiskWriter   |<---------------------+
+                                                                              +----| GstDiskWriter       |<---------------------+
                                                                               |0..1+---------------------+                      |
                                                                               |    |+set_location():void |                      |
                                                                               |    +---------------------+                      |
@@ -19,7 +19,7 @@
                                      |+release_window():void             |                                      |
                                      +-----------------------------------+         +------------------------+   |
                                      |+status-updated                    |<>-------|   <<interface>>        |<--+
-                                     |+error-occured                     |1    0..1| GstRTSPWindowViewer    |
+                                     |+error-occured                     |1    0..1| GstWindowRenderer      |
                                      |+position-changed                  |         +------------------------+
                                      |                                   |         |+set_window():void      |
                                      |                                   |         |+release_window():void  |

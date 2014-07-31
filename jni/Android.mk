@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := mediaplayer
-LOCAL_SRC_FILES := mediaplayer.c nativelayer.c media-player-marshal.c rtspstreamer.c rtspwindowviewer.c rtspviewer.c
+LOCAL_SRC_FILES := mediaplayer.c nativelayer.c media-player-marshal.c rtspstreamer.c windowrenderer.c rtspviewer.c
 LOCAL_SHARED_LIBRARIES := gstreamer_android
 LOCAL_LDLIBS := -llog -landroid
 include $(BUILD_SHARED_LIBRARY)

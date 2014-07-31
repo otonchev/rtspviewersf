@@ -18,7 +18,7 @@
  */
 
 /*
- * GstRTSPViewer: GstRTSPStreamer and GstRTSPWindowViewer creating a RTSP
+ * GstRTSPViewer: GstRTSPStreamer and GstWindowRenderer creating a RTSP
  * pipeline which displays the video content on the screen.
  */
 #ifndef _GST_RTSP_VIEWER_H_

@@ -18,7 +18,7 @@
  */
 
 /*
- * GstRTSPViewer: GstRTSPStreamer and GstRTSPWindowViewer creating a RTSP
+ * GstRTSPViewer: GstRTSPStreamer and GstWindowRenderer creating a RTSP
  * pipeline which displays the video content on the screen.
  */
 #include <gst/video/video.h>
@@ -28,7 +28,7 @@
 
 #include "rtspviewer.h"
 #include "rtspstreamer.h"
-#include "rtspwindowviewer.h"
+#include "windowrenderer.h"
 #include "media-player-marshal.h"
 
 #define GST_RTSP_VIEWER_GET_PRIVATE(obj)  \
@@ -53,21 +53,21 @@ typedef enum {
 static void gst_rtsp_viewer_finalize (GObject * obj);
 static void gst_rtsp_viewer_streamer_interface_init (GstRTSPStreamerInterface *
     iface);
-static GstElement * gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * iface,
+static GstElement * gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
     GMainContext * context, GError ** error);
-static void gst_rtsp_viewer_set_uri (GstRTSPStreamer * iface, const gchar * uri,
+static void gst_rtsp_viewer_set_uri (GstRTSPStreamer * streamer, const gchar * uri,
     const gchar * user, const gchar * pass);
-static void gst_rtsp_viewer_window_viewer_interface_init (GstRTSPWindowViewerInterface *
+static void gst_rtsp_viewer_window_renderer_interface_init (GstWindowRendererInterface *
     iface);
-static void gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
+static void gst_rtsp_viewer_set_window (GstWindowRenderer * renderer,
     ANativeWindow * native_window);
-static void gst_rtsp_viewer_release_window (GstRTSPWindowViewer * viewer);
+static void gst_rtsp_viewer_release_window (GstWindowRenderer * renderer);
 
 G_DEFINE_TYPE_WITH_CODE (GstRTSPViewer, gst_rtsp_viewer, G_TYPE_OBJECT,
     G_IMPLEMENT_INTERFACE (GST_TYPE_RTSP_STREAMER,
         gst_rtsp_viewer_streamer_interface_init)
-    G_IMPLEMENT_INTERFACE (GST_TYPE_RTSP_WINDOW_VIEWER,
-        gst_rtsp_viewer_window_viewer_interface_init));
+    G_IMPLEMENT_INTERFACE (GST_TYPE_WINDOW_RENDERER,
+        gst_rtsp_viewer_window_renderer_interface_init));
 
 static void
 gst_rtsp_viewer_class_init (GstRTSPViewerClass * klass)
@@ -98,7 +98,7 @@ gst_rtsp_viewer_finalize (GObject * obj)
   viewer = GST_RTSP_VIEWER (obj);
   priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
 
-  gst_rtsp_viewer_release_window (GST_RTSP_WINDOW_VIEWER (viewer));
+  gst_rtsp_viewer_release_window (GST_WINDOW_RENDERER (viewer));
 
   if (priv->pipeline != NULL) {
     gst_object_unref (priv->pipeline);
@@ -126,7 +126,7 @@ gst_rtsp_viewer_streamer_interface_init (GstRTSPStreamerInterface * iface)
 }
 
 static void
-gst_rtsp_viewer_window_viewer_interface_init (GstRTSPWindowViewerInterface *
+gst_rtsp_viewer_window_renderer_interface_init (GstWindowRendererInterface *
     iface)
 {
   iface->set_window = gst_rtsp_viewer_set_window;
@@ -250,16 +250,17 @@ gst_rtsp_viewer_create_pipeline (GstRTSPStreamer * streamer,
 }
 
 static void
-gst_rtsp_viewer_set_uri (GstRTSPStreamer * viewer, const gchar * uri,
+gst_rtsp_viewer_set_uri (GstRTSPStreamer * streamer, const gchar * uri,
     const gchar * user, const gchar * pass)
 {
   GstRTSPViewerPrivate *priv;
 
-  priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
+  priv = GST_RTSP_VIEWER_GET_PRIVATE (streamer);
 
   g_return_if_fail (priv->pipeline != NULL);
 
-  GST_DEBUG ("Setting URI to %s(%s,%s) for viewer %p", uri, user, pass, viewer);
+  GST_DEBUG ("Setting URI to %s(%s,%s) for viewer %p", uri, user, pass,
+      streamer);
 
   if (user != NULL && pass != NULL) {
     if (priv->user != NULL)
@@ -274,12 +275,12 @@ gst_rtsp_viewer_set_uri (GstRTSPStreamer * viewer, const gchar * uri,
 }
 
 static void
-gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
+gst_rtsp_viewer_set_window (GstWindowRenderer * renderer,
     ANativeWindow * native_window)
 {
   GstRTSPViewerPrivate *priv;
 
-  priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
+  priv = GST_RTSP_VIEWER_GET_PRIVATE (renderer);
 
   if (priv->native_window != NULL) {
     if (priv->native_window == native_window) {
@@ -288,7 +289,7 @@ gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
       }
       return;
     } else {
-      gst_rtsp_viewer_release_window (viewer);
+      gst_rtsp_viewer_release_window (renderer);
     }
   }
 
@@ -298,11 +299,11 @@ gst_rtsp_viewer_set_window (GstRTSPWindowViewer * viewer,
 }
 
 static void
-gst_rtsp_viewer_release_window (GstRTSPWindowViewer * viewer)
+gst_rtsp_viewer_release_window (GstWindowRenderer * renderer)
 {
   GstRTSPViewerPrivate *priv;
 
-  priv = GST_RTSP_VIEWER_GET_PRIVATE (viewer);
+  priv = GST_RTSP_VIEWER_GET_PRIVATE (renderer);
 
   if (priv->pipeline != NULL) {
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (priv->pipeline),

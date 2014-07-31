@@ -18,13 +18,13 @@
  */
 
 /*
- * GstRTSPWindowViewer: Interface for rendering the video data on the
+ * GstWindowRenderer: Interface for rendering the video data on the
  * screen.
  */
-#include "rtspwindowviewer.h"
+#include "windowrenderer.h"
 #include "media-player-marshal.h"
 
-G_DEFINE_INTERFACE (GstRTSPWindowViewer, gst_rtsp_window_viewer, G_TYPE_OBJECT);
+G_DEFINE_INTERFACE (GstWindowRenderer, gst_window_renderer, G_TYPE_OBJECT);
 
 enum
 {
@@ -32,27 +32,28 @@ enum
   SIGNAL_LAST
 };
 
-static guint gst_rtsp_window_viewer_signals[SIGNAL_LAST] = { 0 };
+static guint gst_window_renderer_signals[SIGNAL_LAST] = { 0 };
 
 void
-gst_rtsp_window_viewer_set_window (GstRTSPWindowViewer * viewer,
+gst_window_renderer_set_window (GstWindowRenderer * renderer,
     ANativeWindow * native_window)
 {
-  GST_RTSP_WINDOW_VIEWER_GET_INTERFACE (viewer)->set_window (viewer,
+  GST_WINDOW_RENDERER_GET_INTERFACE (renderer)->set_window (renderer,
       native_window);
 }
 
 void
-gst_rtsp_window_viewer_release_window (GstRTSPWindowViewer * viewer)
+gst_window_renderer_release_window (GstWindowRenderer * renderer)
 {
-  GST_RTSP_WINDOW_VIEWER_GET_INTERFACE (viewer)->release_window (viewer);
+  GST_WINDOW_RENDERER_GET_INTERFACE (renderer)->release_window (renderer);
 }
 
 static void
-gst_rtsp_window_viewer_default_init (GstRTSPWindowViewerInterface * viewer)
+gst_window_renderer_default_init (GstWindowRendererInterface * renderer)
 {
-  gst_rtsp_window_viewer_signals[SIGNAL_SIZE_CHANGED] =
-      g_signal_new ("size-changed", G_TYPE_FROM_INTERFACE (viewer), G_SIGNAL_RUN_LAST,
-      G_STRUCT_OFFSET (GstRTSPWindowViewerInterface, size_changed), NULL, NULL,
-      g_cclosure_user_marshal_VOID__INT_INT, G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_INT);
+  gst_window_renderer_signals[SIGNAL_SIZE_CHANGED] =
+      g_signal_new ("size-changed", G_TYPE_FROM_INTERFACE (renderer),
+      G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GstWindowRendererInterface,
+      size_changed), NULL, NULL, g_cclosure_user_marshal_VOID__INT_INT,
+      G_TYPE_NONE, 2, G_TYPE_INT, G_TYPE_INT);
 }

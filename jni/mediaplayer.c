@@ -22,7 +22,7 @@
 #include "mediaplayer.h"
 #include "media-player-marshal.h"
 #include "rtspstreamer.h"
-#include "rtspwindowviewer.h"
+#include "windowrenderer.h"
 
 #define GST_MEDIA_PLAYER_GET_PRIVATE(obj)  \
    (G_TYPE_INSTANCE_GET_PRIVATE ((obj), GST_TYPE_MEDIA_PLAYER, GstMediaPlayerPrivate))
@@ -42,7 +42,7 @@ struct _GstMediaPlayerPrivate
   gint64 desired_position;      /* Position to seek to, once the pipeline is running */
   pthread_t gst_app_thread;     /* The thread running the main loop */
   GstRTSPStreamer *streamer;
-  GstRTSPWindowViewer *viewer;
+  GstWindowRenderer *renderer;
 };
 
 /* Do not allow seeks to be performed closer than this distance. It is visually useless, and will probably
@@ -54,7 +54,7 @@ enum
 {
   PROP_0,
   PROP_RTSP_STREAMER,
-  PROP_RTSP_WINDOW_VIEWER
+  PROP_WINDOW_RENDERER
 };
 
 enum
@@ -99,8 +99,8 @@ gst_media_player_class_init (GstMediaPlayerClass * klass)
       G_PARAM_CONSTRUCT_ONLY));
 
   g_object_class_install_property (gobject_class,
-      PROP_RTSP_WINDOW_VIEWER, g_param_spec_object ("rtsp-window-viewer",
-      "RTSPWindowViewer", "RTSP Window Viewer", GST_TYPE_RTSP_WINDOW_VIEWER,
+      PROP_WINDOW_RENDERER, g_param_spec_object ("window-renderer",
+      "WindowRenderer", "Window Renderer", GST_TYPE_WINDOW_RENDERER,
       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   gst_media_player_signals[SIGNAL_NEW_STATUS] =
@@ -137,8 +137,8 @@ gst_media_player_get_property (GObject *object, guint property_id,
     case PROP_RTSP_STREAMER:
       g_value_set_object (value, priv->streamer);
       break;
-    case PROP_RTSP_WINDOW_VIEWER:
-      g_value_set_object (value, priv->viewer);
+    case PROP_WINDOW_RENDERER:
+      g_value_set_object (value, priv->renderer);
       break;
   }
 }
@@ -155,19 +155,19 @@ gst_media_player_set_property (GObject *object, guint property_id,
     case PROP_RTSP_STREAMER:
       priv->streamer = g_value_get_object (value);
       break;
-    case PROP_RTSP_WINDOW_VIEWER:
-      priv->viewer = g_value_get_object (value);
+    case PROP_WINDOW_RENDERER:
+      priv->renderer = g_value_get_object (value);
       break;
   }
 }
 
 GstMediaPlayer*
-gst_media_player_new (GstRTSPStreamer * streamer, GstRTSPWindowViewer * viewer)
+gst_media_player_new (GstRTSPStreamer * streamer, GstWindowRenderer * renderer)
 {
   GstMediaPlayer *player;
 
   player = g_object_new (GST_TYPE_MEDIA_PLAYER, "rtsp-streamer", streamer,
-      "rtsp-window-viewer", viewer, NULL);
+      "window-renderer", renderer, NULL);
 
   return player;
 }
@@ -574,9 +574,9 @@ gst_media_player_finalize (GObject * obj)
     priv->pass = NULL;
   }
 
-  if (priv->viewer != NULL) {
-    g_object_unref (priv->viewer);
-    priv->viewer = NULL;
+  if (priv->renderer != NULL) {
+    g_object_unref (priv->renderer);
+    priv->renderer = NULL;
   }
 
   if (priv->streamer != NULL) {
@@ -690,10 +690,10 @@ gst_media_player_set_native_window (GstMediaPlayer * player,
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  if (priv->viewer == NULL)
+  if (priv->renderer == NULL)
     return;
 
-  gst_rtsp_window_viewer_set_window (priv->viewer, native_window);
+  gst_window_renderer_set_window (priv->renderer, native_window);
 }
 
 /**
@@ -714,8 +714,8 @@ gst_media_player_release_native_window (GstMediaPlayer * player)
 
   priv = GST_MEDIA_PLAYER_GET_PRIVATE (player);
 
-  if (priv->viewer == NULL)
+  if (priv->renderer == NULL)
     return;
 
-  gst_rtsp_window_viewer_release_window (priv->viewer);
+  gst_window_renderer_release_window (priv->renderer);
 }

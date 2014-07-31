@@ -203,7 +203,7 @@ gst_native_player_create (JNIEnv * env, jobject thiz)
 
   viewer = g_object_new (GST_TYPE_RTSP_VIEWER, NULL);
 
-  player = gst_media_player_new (GST_RTSP_STREAMER (viewer), GST_RTSP_WINDOW_VIEWER (viewer));
+  player = gst_media_player_new (GST_RTSP_STREAMER (viewer), GST_WINDOW_RENDERER (viewer));
 
   g_signal_connect (viewer, "size-changed", (GCallback) size_changed,
       data);
